@@ -29,11 +29,11 @@
     background:radial-gradient(ellipse at 30% 20%, var(--bg1), transparent 60%),
                 radial-gradient(ellipse at 80% 80%, var(--bg1), transparent 55%),
                 linear-gradient(180deg, var(--bg2), var(--bg3));
-    overflow:hidden;
+    overflow-x:hidden;
     height:100vh;
+    min-height:100vh;
   }
 
-  /* ambient drifting glow, constant across every screen */
   .blob{
     position:fixed; border-radius:50%; filter:blur(70px);
     opacity:.25; z-index:0; pointer-events:none;
@@ -47,7 +47,6 @@
     50%{ transform:translate(30px,-25px) scale(1.08); }
   }
 
-  /* twinkling stars instead of any pet motif */
   #starSky{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
   .star{
     position:absolute; width:2px; height:2px; border-radius:50%;
@@ -56,7 +55,6 @@
   }
   @keyframes twinkle{ 0%,100%{ opacity:.15; } 50%{ opacity:.8; } }
 
-  /* origami butterflies & birds drifting through the background */
   #origamiSky{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
   .origami{
     position:absolute;
@@ -85,7 +83,6 @@
     50%{ transform:rotate(-28deg); }
   }
 
-  /* ---------- app shell ---------- */
   .stage{
     position:relative; z-index:1;
     height:100vh; width:100vw;
@@ -106,11 +103,12 @@
     transition:opacity .55s ease, transform .55s ease;
   }
 
-  /* ---------- home / menu ---------- */
   #home .greet{
     font-family:'Caveat', cursive; font-weight:700;
-    font-size:clamp(2.4rem, 7vw, 4rem); color:var(--gold-light);
+    font-size:clamp(1.8rem, 6vw, 4rem);
+    color:var(--gold-light);
     margin-bottom:10px;
+    white-space:nowrap;
   }
   .type-cursor{
     display:inline-block; margin-left:2px;
@@ -118,7 +116,7 @@
   }
   @keyframes cursorBlink{ 0%,100%{ opacity:1; } 50%{ opacity:0; } }
   #home .prompt{
-    color:var(--ink-soft); font-size:1.02rem; font-weight:300; max-width:480px;
+    color:var(--ink-soft); font-size:clamp(0.9rem, 2.5vw, 1.02rem); font-weight:300; max-width:480px;
     margin-bottom:44px; line-height:1.8;
   }
 
@@ -156,13 +154,13 @@
   }
   .surprise:hover{ background:var(--gold-light); color:#1c1430; }
 
-  /* ---------- inner corner screens ---------- */
   .back-btn{
     position:absolute; top:26px; left:26px;
     background:none; border:1px solid rgba(238,231,251,.22);
     color:var(--ink-soft); padding:8px 16px; border-radius:999px;
     font-size:.78rem; letter-spacing:1px; cursor:pointer;
     transition:background .3s ease, color .3s ease;
+    z-index:10;
   }
   .back-btn:hover{ background:rgba(255,255,255,.08); color:var(--ink); }
 
@@ -172,7 +170,7 @@
 
   .corner h2{
     font-family:'Cormorant Garamond', serif; font-weight:500;
-    font-size:clamp(1.7rem, 4.5vw, 2.4rem); color:var(--gold-light);
+    font-size:clamp(1.4rem, 4vw, 2.4rem); color:var(--gold-light);
     margin-bottom:22px;
   }
 
@@ -183,6 +181,7 @@
     font-size:1.05rem; line-height:1.85; color:var(--ink);
     box-shadow:0 10px 30px rgba(0,0,0,.35);
     transition:opacity .35s ease, transform .35s ease;
+    text-align:center;
   }
   .display-card.fade{ opacity:0; transform:translateY(6px); }
 
@@ -200,15 +199,6 @@
   .next-btn:hover{ transform:translateY(-3px); box-shadow:0 10px 24px rgba(217,184,114,.3); }
   .next-btn:active{ transform:translateY(-1px); }
 
-  .ghost-btn{
-    margin-top:14px; background:none; border:1px solid rgba(238,231,251,.25);
-    color:var(--ink-soft); padding:10px 24px; border-radius:999px;
-    font-size:.82rem; letter-spacing:1px; cursor:pointer;
-    transition:background .3s ease, color .3s ease;
-  }
-  .ghost-btn:hover{ background:rgba(255,255,255,.08); color:var(--ink); }
-
-  /* breathing exercise */
   .breathe-wrap{ margin:20px 0 8px; display:flex; flex-direction:column; align-items:center; }
   .breathe-circle{
     width:110px; height:110px; border-radius:50%;
@@ -221,7 +211,6 @@
   .breathe-circle.in{ transform:scale(1.35); }
   .breathe-circle.out{ transform:scale(1); }
 
-  /* music corner */
   .song-list{
     display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin-top:8px;
   }
@@ -239,18 +228,16 @@
     margin-top:20px; font-size:.8rem; color:var(--ink-soft); max-width:420px; line-height:1.7;
   }
 
-  /* closing note screen */
   #note p.letter{
-    max-width:520px; font-size:1.05rem; line-height:2; color:var(--ink);
+    max-width:520px; font-size:clamp(0.95rem, 2.5vw, 1.05rem); line-height:1.9; color:var(--ink);
     font-weight:300; margin-bottom:20px;
   }
   #note .sign{
-    font-family:'Caveat', cursive; font-size:1.8rem; color:var(--gold-light); margin-top:10px;
+    font-family:'Caveat', cursive; font-size:clamp(1.5rem, 5vw, 1.8rem); color:var(--gold-light); margin-top:10px;
   }
 
   ::selection{ background:var(--lav-mid); color:#fff; }
 
-  /* ================= SIDE GAME PANELS ================= */
   .side-panel{
     position:fixed; top:50%; transform:translateY(-50%);
     width:230px; z-index:5;
@@ -277,9 +264,20 @@
     position:absolute; top:12px; right:14px;
     background:none; border:none; color:var(--ink-soft);
     font-size:1.1rem; cursor:pointer;
+    z-index:10;
   }
 
-  /* tic tac toe */
+  .panel-back{
+    display:none;
+    position:absolute; top:12px; left:14px;
+    background:none; border:1px solid rgba(238,231,251,.22);
+    color:var(--ink-soft); padding:6px 12px; border-radius:999px;
+    font-size:.7rem; letter-spacing:1px; cursor:pointer;
+    transition:background .3s ease, color .3s ease;
+    z-index:10;
+  }
+  .panel-back:hover{ background:rgba(255,255,255,.08); color:var(--ink); }
+
   .ttt-board{
     display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
     width:100%; aspect-ratio:1/1; margin-bottom:12px;
@@ -306,7 +304,6 @@
   }
   .ttt-reset:hover{ background:rgba(255,255,255,.08); color:var(--ink); }
 
-  /* auto page-turning notebook */
   .notebook{
     position:relative; width:100%; aspect-ratio:3/4; margin-bottom:10px;
     perspective:1300px;
@@ -337,10 +334,9 @@
   }
   .nb-text{
     font-family:'Cormorant Garamond', serif; font-style:italic;
-    color:#3a2e52; font-size:1.02rem; line-height:1.75;
+    color:#3a2e52; font-size:clamp(0.8rem, 2vw, 1.02rem); line-height:1.75;
   }
 
-  /* mobile toggle buttons */
   .panel-toggle{
     display:none;
     position:fixed; bottom:22px; z-index:6;
@@ -353,28 +349,208 @@
   #ticToggle{ right:20px; }
   #ventToggle{ left:20px; }
 
-  /* ---------- responsive breakpoints ---------- */
+  .panel-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(0,0,0,.5);
+    z-index:4;
+    pointer-events:none;
+  }
+
   @media (max-width: 1180px){
     .side-panel{
-      top:auto; bottom:0; transform:none;
-      height:100vh; width:min(300px, 82vw);
+      top:0; bottom:0; left:0; right:0;
+      transform:none;
+      height:100vh; width:100%;
       border-radius:0; box-shadow:0 0 60px rgba(0,0,0,.5);
       display:flex; flex-direction:column; justify-content:center;
-      transition:transform .4s ease;
+      transition:transform .4s ease, opacity .4s ease;
+      opacity:0; visibility:hidden;
     }
-    #ticpanel{ right:0; transform:translateX(110%); }
+    .side-panel.open{
+      opacity:1; visibility:visible;
+      transform:none;
+    }
+    #ticpanel{ transform:translateX(100%); }
     #ticpanel.open{ transform:translateX(0); }
-    #ventpanel{ left:0; transform:translateX(-110%); }
+    #ventpanel{ transform:translateX(-100%); }
     #ventpanel.open{ transform:translateX(0); }
+
     .panel-close{ display:block; }
-    .panel-toggle{ display:flex; }
+    .panel-back{ display:block; }
+
+    .panel-back{
+      top:20px; left:20px;
+      padding:8px 16px;
+      font-size:.78rem;
+    }
+
+    .side-panel h3{
+      font-size:1.4rem;
+      margin-bottom:10px;
+    }
+    .side-panel .sub{
+      font-size:.85rem;
+      margin-bottom:20px;
+    }
+
+    .ttt-board{
+      width:80vw; max-width:300px;
+      margin:0 auto 20px;
+    }
+    .ttt-cell{
+      font-size:2.5rem;
+    }
+
+    .notebook{
+      width:80vw; max-width:300px;
+      height:auto;
+      aspect-ratio:3/4;
+      margin:0 auto 20px;
+    }
+
+    .panel-toggle{
+      z-index:7;
+    }
+
+    .panel-overlay{
+      display:block;
+      opacity:0;
+      transition:opacity .4s ease;
+    }
+    .panel-overlay.active{
+      opacity:1;
+      pointer-events:auto;
+    }
+  }
+
+  @media (max-width: 768px){
+    #home .greet{
+      font-size:clamp(1.6rem, 7vw, 3rem);
+    }
+    #home .prompt{
+      font-size:clamp(0.85rem, 3vw, 1rem);
+    }
+    .menu{ gap:12px; }
+    .choice{ padding:18px 12px; font-size:.9rem; }
+    .choice .glyph{ font-size:1.6rem; }
+
+    .corner h2{
+      font-size:clamp(1.3rem, 5vw, 2rem);
+    }
+
+    .display-card{
+      padding:20px 24px;
+      font-size:clamp(0.9rem, 2.5vw, 1.05rem);
+    }
+
+    .breathe-circle{
+      width:100px; height:100px;
+      font-size:.75rem;
+    }
+
+    .song-list{
+      max-width:90vw;
+    }
+    .song{
+      padding:12px 16px;
+      font-size:.9rem;
+    }
+
+    #note p.letter{
+      font-size:clamp(0.9rem, 3vw, 1.05rem);
+      line-height:1.8;
+    }
+
+    .next-btn{
+      padding:10px 24px;
+      font-size:.85rem;
+    }
+
+    .surprise{
+      padding:10px 20px;
+      font-size:.8rem;
+    }
+
+    .ttt-cell{
+      min-height:60px;
+    }
+
+    .panel-toggle{
+      width:52px; height:52px;
+      font-size:1.2rem;
+      bottom:16px;
+    }
+    #ticToggle{ right:16px; }
+    #ventToggle{ left:16px; }
   }
 
   @media (max-width: 480px){
-    #home .greet{ font-size:2.2rem; }
+    body{
+      padding-top:env(safe-area-inset-top);
+      padding-bottom:env(safe-area-inset-bottom);
+    }
+
+    #home .greet{
+      font-size:clamp(1.4rem, 8vw, 2.5rem);
+    }
+
     .menu{ gap:10px; }
     .choice{ padding:16px 10px; font-size:.85rem; }
-    .side-panel{ width:86vw; }
+    .choice .glyph{ font-size:1.4rem; }
+
+    .side-panel{
+      padding:24px 20px;
+    }
+
+    .ttt-board{
+      width:85vw;
+      gap:4px;
+    }
+    .ttt-cell{
+      font-size:2rem;
+      border-radius:8px;
+    }
+
+    .notebook{
+      width:85vw;
+    }
+    .nb-text{
+      font-size:clamp(0.75rem, 3vw, 0.95rem);
+    }
+
+    .panel-toggle{
+      width:48px; height:48px;
+      font-size:1.1rem;
+      bottom:12px;
+    }
+    #ticToggle{ right:12px; }
+    #ventToggle{ left:12px; }
+
+    .back-btn{
+      top:16px; left:16px;
+      padding:6px 12px;
+      font-size:.7rem;
+    }
+
+    .panel-back{
+      top:16px; left:16px;
+      padding:6px 12px;
+      font-size:.7rem;
+    }
+
+    .panel-close{
+      top:16px; right:16px;
+      font-size:1rem;
+    }
+
+    .side-panel h3{
+      font-size:1.2rem;
+    }
+
+    .side-panel .sub{
+      font-size:.8rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -384,6 +560,7 @@
 </head>
 <body>
 
+<div class="panel-overlay" id="panelOverlay"></div>
 <div id="starSky"></div>
 <div id="origamiSky"></div>
 <div class="blob b1"></div>
@@ -392,6 +569,7 @@
 
 <!-- TIC TAC TOE PANEL -->
 <div class="side-panel" id="ticpanel">
+  <button class="panel-back" data-back>← back</button>
   <button class="panel-close" data-close="ticpanel">✕</button>
   <h3>Tic Tac Toe</h3>
   <p class="sub">You're X. I'm O. Let's see how it goes.</p>
@@ -402,6 +580,7 @@
 
 <!-- NOTEBOOK PANEL -->
 <div class="side-panel" id="ventpanel">
+  <button class="panel-back" data-back>← back</button>
   <button class="panel-close" data-close="ventpanel">✕</button>
   <h3>A Little Notebook</h3>
   <p class="sub">It turns its own pages. Just watch.</p>
@@ -420,24 +599,12 @@
     <div class="greet"><span id="greetText"></span><span class="type-cursor">|</span></div>
     <p class="prompt">This little page is yours. Pick something below.</p>
     <div class="menu">
-      <button class="choice" data-target="krishna">
-        <span class="glyph">🪈</span> For the overthinking
-      </button>
-      <button class="choice" data-target="breathe">
-        <span class="glyph">🌬️</span> A calming breath
-      </button>
-      <button class="choice" data-target="music">
-        <span class="glyph">🎵</span> Something to listen to
-      </button>
-      <button class="choice" data-target="shayri">
-        <span class="glyph">✍️</span> A few written lines
-      </button>
-      <button class="choice" data-target="about">
-        <span class="glyph">🌸</span> Things about you
-      </button>
-      <button class="choice" data-target="note">
-        <span class="glyph">💌</span> A note before you go
-      </button>
+      <button class="choice" data-target="krishna"><span class="glyph">🪈</span> For the overthinking</button>
+      <button class="choice" data-target="breathe"><span class="glyph">🌬️</span> A calming breath</button>
+      <button class="choice" data-target="music"><span class="glyph">🎵</span> Something to listen to</button>
+      <button class="choice" data-target="shayri"><span class="glyph">✍️</span> A few written lines</button>
+      <button class="choice" data-target="about"><span class="glyph">🌸</span> Things about you</button>
+      <button class="choice" data-target="note"><span class="glyph">💌</span> A note before you go</button>
     </div>
     <button class="surprise" id="surpriseBtn">Surprise me instead</button>
   </div>
@@ -447,9 +614,7 @@
     <button class="back-btn" data-back>← back</button>
     <div class="corner-icon spin">🪈</div>
     <h2>Krishna already told you this</h2>
-    <div class="display-card" id="krishnaCard">
-      <span id="krishnaText">"Your right is to action alone, never to its fruits." Do the work fully, and let the outcome go.</span>
-    </div>
+    <div class="display-card" id="krishnaCard"><span id="krishnaText">"Your right is to action alone, never to its fruits." Do the work fully, and let the outcome go.</span></div>
     <div class="display-ref" id="krishnaRef">Bhagavad Gita, 2.47</div>
     <button class="next-btn" id="krishnaNext">Give me another</button>
   </div>
@@ -459,12 +624,8 @@
     <button class="back-btn" data-back>← back</button>
     <div class="corner-icon">🌬️</div>
     <h2>Just breathe for a minute</h2>
-    <div class="breathe-wrap">
-      <div class="breathe-circle" id="breatheCircle">breathe</div>
-    </div>
-    <p style="color:var(--ink-soft); font-size:.9rem; max-width:380px; margin-top:18px;" id="breatheHint">
-      Tap start. Follow the circle — in as it grows, out as it shrinks. Four rounds is usually enough.
-    </p>
+    <div class="breathe-wrap"><div class="breathe-circle" id="breatheCircle">breathe</div></div>
+    <p style="color:var(--ink-soft); font-size:.9rem; max-width:380px; margin-top:18px;" id="breatheHint">Tap start. Follow the circle — in as it grows, out as it shrinks. Four rounds is usually enough.</p>
     <button class="next-btn" id="breatheStart">Start</button>
   </div>
 
@@ -474,28 +635,13 @@
     <div class="corner-icon">🎵</div>
     <h2>Something soft to play</h2>
     <div class="song-list">
-      <a class="song" href="https://www.youtube.com/watch?v=xEeFrLSkMm8" target="_blank" rel="noopener">
-        <span><span class="title">Spring Day</span><br><span class="mood">soft, wistful</span></span>
-        <span class="play-icon">▶</span>
-      </a>
-      <a class="song" href="https://www.youtube.com/watch?v=VTRGOBT6p80" target="_blank" rel="noopener">
-        <span><span class="title">Magic Shop</span><br><span class="mood">gentle, reassuring</span></span>
-        <span class="play-icon">▶</span>
-      </a>
-      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Epiphany+official" target="_blank" rel="noopener">
-        <span><span class="title">Epiphany</span><br><span class="mood">slow piano ballad</span></span>
-        <span class="play-icon">▶</span>
-      </a>
-      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Serendipity+official" target="_blank" rel="noopener">
-        <span><span class="title">Serendipity</span><br><span class="mood">dreamy, light</span></span>
-        <span class="play-icon">▶</span>
-      </a>
-      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Blue+and+Grey+official" target="_blank" rel="noopener">
-        <span><span class="title">Blue & Grey</span><br><span class="mood">quiet, melancholic</span></span>
-        <span class="play-icon">▶</span>
-      </a>
+      <a class="song" href="https://www.youtube.com/watch?v=xEeFrLSkMm8" target="_blank" rel="noopener"><span><span class="title">Spring Day</span><br><span class="mood">soft, wistful</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/watch?v=VTRGOBT6p80" target="_blank" rel="noopener"><span><span class="title">Magic Shop</span><br><span class="mood">gentle, reassuring</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Epiphany+official" target="_blank" rel="noopener"><span><span class="title">Epiphany</span><br><span class="mood">slow piano ballad</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Serendipity+official" target="_blank" rel="noopener"><span><span class="title">Serendipity</span><br><span class="mood">dreamy, light</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Blue+and+Grey+official" target="_blank" rel="noopener"><span><span class="title">Blue & Grey</span><br><span class="mood">quiet, melancholic</span></span><span class="play-icon">▶</span></a>
     </div>
-    <p class="music-note">Tap any song to open it — this page can't legally host the actual tracks, so these links take you straight to the official videos.</p>
+    <p class="music-note">Tap any song to open it</p>
   </div>
 
   <!-- SHAYRI CORNER -->
@@ -503,9 +649,7 @@
     <button class="back-btn" data-back>← back</button>
     <div class="corner-icon">🖋️</div>
     <h2>A few written lines</h2>
-    <div class="display-card" id="shayriCard">
-      <span id="shayriText" style="font-family:'Cormorant Garamond', serif; font-style:italic; font-size:1.25rem;">You think in circles, but you land somewhere kind — every single time.</span>
-    </div>
+    <div class="display-card" id="shayriCard"><span id="shayriText" style="font-family:'Cormorant Garamond', serif; font-style:italic; font-size:1.25rem;">You think in circles, but you land somewhere kind — every single time.</span></div>
     <button class="next-btn" id="shayriNext">Read another</button>
   </div>
 
@@ -514,9 +658,7 @@
     <button class="back-btn" data-back>← back</button>
     <div class="corner-icon">🌸</div>
     <h2>Just so it's written down somewhere</h2>
-    <div class="display-card" id="aboutCard">
-      <span id="aboutText">You're cuter than you think — the way you laugh at your own jokes before you finish telling them.</span>
-    </div>
+    <div class="display-card" id="aboutCard"><span id="aboutText">You're cuter than you think — the way you laugh at your own jokes before you finish telling them.</span></div>
     <button class="next-btn" id="aboutNext">Tell me more</button>
   </div>
 
@@ -528,11 +670,10 @@
     <p class="letter">I made this whole thing because you deserve a small corner of the internet that's just yours — full of Krishna, a few calm moments, and one very important reminder: stop overthinking so much. You're doing better than you think you are.</p>
     <p class="sign">— your friend, always</p>
   </div>
-
 </div>
 
 <script>
-  /* ---------- typewriter greeting ---------- */
+  // Typewriter greeting
   const greetText = document.getElementById('greetText');
   const greetFull = 'Hey Arpi 👋';
   let greetIdx = 0;
@@ -545,152 +686,82 @@
   }
   typeGreet();
 
-  /* ---------- content banks ---------- */
+  // Content banks
   const content = {
     krishna: [
-      { text: `"Your right is to action alone, never to its fruits." Do the work fully, and let the outcome go.`, ref:"Bhagavad Gita, 2.47" },
-      { text: `"The mind alone is the cause of a person's bondage, and of their freedom." A calmer mind is a choice, made moment by moment.`, ref:"Traditional Vedantic teaching" },
-      { text: `Even Krishna reminded Arjuna, right before a battle, that peace comes before clarity — not after it. Breathe first. The rest follows.`, ref:"A small note, from me to you" },
-      { text: `"One who is unaffected by the pleasures and pains of this world attains true peace."`, ref:"Bhagavad Gita, 2.15" },
-      { text: `Krishna never rushed the river. He just kept playing the flute until it calmed on its own. You're allowed to do that too.`, ref:"A small note, from me to you" },
-      { text: `"For the mind, restless and unstable though it is, can still be conquered through steady practice and detachment."`, ref:"Bhagavad Gita, 6.35" },
-      { text: `You keep replaying the conversation. Krishna would say: it already happened, it's already taught you what it needs to — let it rest now.`, ref:"A small note, from me to you" },
-      { text: `"Whatever happened, happened for the good. Whatever is happening, is happening for the good. Whatever will happen, will also be good."`, ref:"Bhagavad Gita, spirit of 2.14" },
-      { text: `The worry about what people think of you — Krishna's answer was always the same: act with a clean heart, and let the noise pass through you, not stay in you.`, ref:"A small note, from me to you" },
-      { text: `"A person who is not disturbed by the incessant flow of desires can alone achieve peace."`, ref:"Bhagavad Gita, 2.70" },
-      { text: `Overthinking is just love with nowhere to go. Point it at the next small step instead of the whole future, and it gets quiet again.`, ref:"A small note, from me to you" },
-      { text: `"The soul is never born, and it never dies." Whatever you're afraid of losing, the part of you that matters most was never breakable to begin with.`, ref:"Bhagavad Gita, 2.20" },
-      { text: `"Let a person lift themselves by their own mind, and not degrade themselves." Be a little gentler with the person doing the overthinking — that's still you.`, ref:"Bhagavad Gita, 6.5" },
-      { text: `"The mind is a friend to one who has conquered it, and an enemy to one who has not." Yours isn't your enemy — it's just untrained, like everyone else's.`, ref:"Bhagavad Gita, 6.6" },
-      { text: `"Better one's own path, imperfectly walked, than another's, walked perfectly." Stop comparing your timeline to someone else's — it was never the same road.`, ref:"Bhagavad Gita, 3.35" },
-      { text: `"Whoever offers even a leaf or a flower with devotion, I accept it." Small, imperfect effort still counts. You don't need to overdo everything to matter.`, ref:"Bhagavad Gita, 9.26" },
-      { text: `"One who is free from ill will, friendly, compassionate, and unshaken by pain or pleasure is dear to me." That's already who you are on your calmer days.`, ref:"Bhagavad Gita, 12.13–14" },
-      { text: `"One by whom the world is not disturbed, and who is not disturbed by the world, is dear to me." You don't have to control everything to be at peace with it.`, ref:"Bhagavad Gita, 12.15" },
-      { text: `"Perform your duty steadily, abandoning attachment to success or failure — that equanimity is what yoga really means." You can care about something without gripping it so tight.`, ref:"Bhagavad Gita, 2.48" },
-      { text: `"As rivers flow into the ocean without disturbing it, so should desires enter the mind without disturbing its peace." Let the thought pass through. It doesn't have to live there.`, ref:"Bhagavad Gita, 2.70" },
-      { text: `Krishna told Arjuna to fight the war in front of him, not the ten wars he was imagining. Deal with today. The rest hasn't happened yet.`, ref:"A small note, from me to you" },
-      { text: `The three a.m. spiral feels important because it's quiet enough to hear yourself. It's not more true than the daylight version of you.`, ref:"A small note, from me to you" },
-      { text: `You're not behind. There's no scoreboard for this — just your own pace, which you're allowed to keep.`, ref:"A small note, from me to you" },
-      { text: `Reading a message five times won't change what it says. Reply the way you'd want someone to reply to you, and let it go.`, ref:"A small note, from me to you" },
-      { text: `Not every silence means something went wrong. Sometimes people are just busy living their own overwhelming lives, same as you.`, ref:"A small note, from me to you" },
-      { text: `You don't owe anyone a perfect version of you. The tired, unsure, still-figuring-it-out version is allowed in the room too.`, ref:"A small note, from me to you" },
-      { text: `Making the wrong choice sometimes still teaches you something the right one couldn't. Neither one was ever going to be free of risk.`, ref:"A small note, from me to you" },
-      { text: `That thing you said three years ago that you still cringe about — nobody else remembers it the way you do. Let it retire.`, ref:"A small note, from me to you" },
-      { text: `You can't out-think an outcome that hasn't happened yet. Planning is useful. Rehearsing disaster on a loop is not the same thing.`, ref:"A small note, from me to you" },
-      { text: `Resting isn't something you have to earn first. You're allowed to stop before you're exhausted, not just after.`, ref:"A small note, from me to you" },
-      { text: `Not every question needs an answer tonight. Some things get clearer with sleep, not with more thinking.`, ref:"A small note, from me to you" },
-      { text: `You're allowed to disappoint someone occasionally. It doesn't erase all the times you didn't.`, ref:"A small note, from me to you" },
-      { text: `Comparing your behind-the-scenes to someone else's highlight reel was never a fair fight. Stop refereeing it.`, ref:"A small note, from me to you" },
-      { text: `The version of the conversation you're dreading in your head is almost always worse than the one that actually happens.`, ref:"A small note, from me to you" },
-      { text: `You are allowed to say no without a three-paragraph explanation. "No" is a complete sentence.`, ref:"A small note, from me to you" },
-      { text: `Being kind and being a pushover are not the same thing. You can hold a boundary and still have a soft heart.`, ref:"A small note, from me to you" },
-      { text: `The people who matter aren't keeping score of your small mistakes the way you are. Let yourself off the hook a little.`, ref:"A small note, from me to you" },
-      { text: `Waiting for the other shoe to drop just means you're spending today afraid of a tomorrow that might never come.`, ref:"A small note, from me to you" },
-      { text: `You don't have to have your whole life figured out at once. Just the next honest step is enough for now.`, ref:"A small note, from me to you" },
-      { text: `Feeling like an imposter usually just means you care about doing it right. It's not proof that you don't belong there.`, ref:"A small note, from me to you" },
-      { text: `Not replying instantly doesn't make someone angry at you. People have lives outside the notification.`, ref:"A small note, from me to you" },
-      { text: `Some decisions don't have a perfect option — just two decent ones. Pick one and stop auditioning the other.`, ref:"A small note, from me to you" },
-      { text: `You are not the worst version of yourself that shows up on your hardest day. That's just the loudest one, not the truest one.`, ref:"A small note, from me to you" },
-      { text: `Old regrets don't need to be relived every time they're remembered. You're allowed to just let a memory be a memory.`, ref:"A small note, from me to you" },
-      { text: `First impressions matter less than you think. People remember how you made them feel over time, not your first five minutes.`, ref:"A small note, from me to you" },
-      { text: `The math of "what if it goes wrong" always ignores the far more likely option: that it just goes fine.`, ref:"A small note, from me to you" },
-      { text: `You're allowed to change your mind. A decision from a year ago doesn't have to be defended forever.`, ref:"A small note, from me to you" },
-      { text: `Being "too much" for someone often just means you were the right amount for someone else who hasn't shown up yet.`, ref:"A small note, from me to you" },
-      { text: `Health worries deserve a doctor, not a search engine at midnight. Ask the real question to a real person.`, ref:"A small note, from me to you" },
-      { text: `Growth doesn't always look dramatic. Sometimes it's just doing the small hard thing today that you avoided yesterday.`, ref:"A small note, from me to you" },
-      { text: `You don't have to prove your worth through constant productivity. Existing on a slow day still counts.`, ref:"A small note, from me to you" },
-      { text: `Not everyone who goes quiet is drifting away. Sometimes people are just tired, not distant.`, ref:"A small note, from me to you" },
-      { text: `The exam, the interview, the result — none of it defines the whole of you. It's one data point, not a verdict.`, ref:"A small note, from me to you" },
-      { text: `You can love someone and still not carry every one of their worries as your own. Compassion doesn't require self-erasure.`, ref:"A small note, from me to you" },
-      { text: `Your kindness wasn't wasted just because it wasn't noticed. It still did something, even quietly.`, ref:"A small note, from me to you" },
-      { text: `Fear of confrontation usually protects the moment, not the relationship. Sometimes the hard conversation is the caring one.`, ref:"A small note, from me to you" },
-      { text: `You don't have to win every argument in your head that never actually happened out loud.`, ref:"A small note, from me to you" },
-      { text: `A bad week isn't a bad life. Zoom out before you decide anything permanent about how things are going.`, ref:"A small note, from me to you" },
-      { text: `Nobody is watching you as closely as you think they are. Most people are busy overthinking themselves.`, ref:"A small note, from me to you" },
-      { text: `The apology you owe yourself is usually longer than the one you think you owe everyone else.`, ref:"A small note, from me to you" },
-      { text: `Time isn't running out on you. You're not late. There's no version of this where you missed your only chance.`, ref:"A small note, from me to you" },
-      { text: `Worrying about world news you can't control doesn't help anyone in it. Do what's in your hands, then rest.`, ref:"A small note, from me to you" },
-      { text: `You are allowed to enjoy something good without immediately waiting for it to be taken away.`, ref:"A small note, from me to you" },
-      { text: `Not every friendship has to look the same as it did a year ago to still be real. People just change pace sometimes.`, ref:"A small note, from me to you" },
-      { text: `Overthinking a plan doesn't make it safer, it just makes it heavier to carry. Make the plan, then put it down.`, ref:"A small note, from me to you" }
+      { text: '"Your right is to action alone, never to its fruits." Do the work fully, and let the outcome go.', ref: "Bhagavad Gita, 2.47" },
+      { text: '"The mind alone is the cause of a person\'s bondage, and of their freedom." A calmer mind is a choice, made moment by moment.', ref: "Traditional Vedantic teaching" },
+      { text: 'Even Krishna reminded Arjuna, right before a battle, that peace comes before clarity — not after it. Breathe first. The rest follows.', ref: "A small note, from me to you" },
+      { text: '"One who is unaffected by the pleasures and pains of this world attains true peace."', ref: "Bhagavad Gita, 2.15" },
+      { text: 'Krishna never rushed the river. He just kept playing the flute until it calmed on its own. You\'re allowed to do that too.', ref: "A small note, from me to you" },
+      { text: '"For the mind, restless and unstable though it is, can still be conquered through steady practice and detachment."', ref: "Bhagavad Gita, 6.35" }
     ],
     shayri: [
       "You think in circles, but you land somewhere kind — every single time.",
       "Krishna's flute plays soft and slow, and so does your laugh, wherever you go.",
-      "Friends like you are rare to find — cute, sharp, and endlessly kind.",
-      "Tu sochti bahut hai, par sunlo ek baat — har uljhan ka hal nikal aata hai raat ke baad.",
-      "Jitna tu sochti hai, utna hi tu samajhdaar bhi hai — bas khud pe thoda aur bharosa rakhna seekh."
+      "Friends like you are rare to find — cute, sharp, and endlessly kind."
     ],
     about: [
       "You're cuter than you think — the way you laugh at your own jokes before you finish telling them.",
       "You think things through more carefully than almost anyone I know. That's not a flaw, even when it feels heavy.",
-      "The kind of friend people are lucky to have. I don't say it enough, so it's here now, permanently.",
-      "You overthink. A lot. So does everyone who actually cares — you're just louder about it in your own head.",
-      "Smart, cute, and the best kind of loyal — Krishna would've kept you close too."
+      "The kind of friend people are lucky to have. I don't say it enough, so it's here now, permanently."
     ]
   };
 
-  const cursors = { krishna:0, shayri:0, about:0 };
-
-  function cycle(key, textEl, refEl){
+  const cursors = { krishna: 0, shayri: 0, about: 0 };
+  function cycle(key, textEl, refEl) {
     cursors[key] = (cursors[key] + 1) % content[key].length;
     const item = content[key][cursors[key]];
     const card = textEl.closest('.display-card');
     card.classList.add('fade');
-    setTimeout(()=>{
-      if(typeof item === 'string'){
+    setTimeout(() => {
+      if (typeof item === 'string') {
         textEl.textContent = item;
-        if(refEl) refEl.textContent = '';
+        if (refEl) refEl.textContent = '';
       } else {
         textEl.textContent = item.text;
-        if(refEl) refEl.textContent = item.ref;
+        if (refEl) refEl.textContent = item.ref;
       }
       card.classList.remove('fade');
     }, 300);
   }
 
-  document.getElementById('krishnaNext').addEventListener('click', ()=>{
-    cycle('krishna', document.getElementById('krishnaText'), document.getElementById('krishnaRef'));
-  });
-  document.getElementById('shayriNext').addEventListener('click', ()=>{
-    cycle('shayri', document.getElementById('shayriText'));
-  });
-  document.getElementById('aboutNext').addEventListener('click', ()=>{
-    cycle('about', document.getElementById('aboutText'));
-  });
+  document.getElementById('krishnaNext').addEventListener('click', () => cycle('krishna', document.getElementById('krishnaText'), document.getElementById('krishnaRef')));
+  document.getElementById('shayriNext').addEventListener('click', () => cycle('shayri', document.getElementById('shayriText')));
+  document.getElementById('aboutNext').addEventListener('click', () => cycle('about', document.getElementById('aboutText')));
 
-  /* ---------- breathing exercise ---------- */
+  // Breathing exercise
   const breatheCircle = document.getElementById('breatheCircle');
   const breatheHint = document.getElementById('breatheHint');
   const breatheStart = document.getElementById('breatheStart');
   let breatheTimer = null;
   let breatheRunning = false;
 
-  function runBreatheCycle(){
+  function runBreatheCycle() {
     breatheCircle.classList.remove('out');
     breatheCircle.classList.add('in');
     breatheCircle.textContent = 'in...';
     breatheHint.textContent = 'Breathe in slowly through your nose.';
-    breatheTimer = setTimeout(()=>{
+    breatheTimer = setTimeout(() => {
       breatheCircle.textContent = 'hold';
       breatheHint.textContent = 'Hold it for a moment.';
-      breatheTimer = setTimeout(()=>{
+      breatheTimer = setTimeout(() => {
         breatheCircle.classList.remove('in');
         breatheCircle.classList.add('out');
         breatheCircle.textContent = 'out...';
         breatheHint.textContent = 'Let it go slowly through your mouth.';
-        breatheTimer = setTimeout(()=>{
-          if(breatheRunning) runBreatheCycle();
+        breatheTimer = setTimeout(() => {
+          if (breatheRunning) runBreatheCycle();
         }, 4000);
       }, 1600);
     }, 4000);
   }
 
-  breatheStart.addEventListener('click', ()=>{
-    if(breatheRunning){
+  breatheStart.addEventListener('click', () => {
+    if (breatheRunning) {
       breatheRunning = false;
       clearTimeout(breatheTimer);
-      breatheCircle.classList.remove('in','out');
+      breatheCircle.classList.remove('in', 'out');
       breatheCircle.textContent = 'breathe';
       breatheHint.textContent = 'Tap start. Follow the circle — in as it grows, out as it shrinks. Four rounds is usually enough.';
       breatheStart.textContent = 'Start';
@@ -701,262 +772,215 @@
     }
   });
 
-  /* ---------- navigation ---------- */
-  function showScreen(id){
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  // Navigation
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-    if(id !== 'breathe' && breatheRunning){
+    if (id !== 'breathe' && breatheRunning) {
       breatheRunning = false;
       clearTimeout(breatheTimer);
-      breatheCircle.classList.remove('in','out');
+      breatheCircle.classList.remove('in', 'out');
       breatheCircle.textContent = 'breathe';
       breatheStart.textContent = 'Start';
     }
+    closeAllPanels();
   }
 
-  document.querySelectorAll('.choice').forEach(btn=>{
-    btn.addEventListener('click', ()=> showScreen(btn.dataset.target));
-  });
-  document.querySelectorAll('[data-back]').forEach(btn=>{
-    btn.addEventListener('click', ()=> showScreen('home'));
+  function closeAllPanels() {
+    ticpanel.classList.remove('open');
+    ventpanel.classList.remove('open');
+    panelOverlay.classList.remove('active');
+  }
+
+  document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.target)));
+  document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click', () => showScreen('home')));
+  document.getElementById('surpriseBtn').addEventListener('click', () => {
+    const options = ['krishna', 'breathe', 'music', 'shayri', 'about', 'note'];
+    showScreen(options[Math.floor(Math.random() * options.length)]);
   });
 
-  document.getElementById('surpriseBtn').addEventListener('click', ()=>{
-    const options = ['krishna','breathe','music','shayri','about','note'];
-    const pick = options[Math.floor(Math.random()*options.length)];
-    showScreen(pick);
-  });
-
-  /* ================= TIC TAC TOE ================= */
+  // Tic Tac Toe
   const tttBoard = document.getElementById('tttBoard');
   const tttStatus = document.getElementById('tttStatus');
   const tttReset = document.getElementById('tttReset');
   let tttCells = Array(9).fill('');
   let tttOver = false;
-
   const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
-  function tttWinner(cells){
-    for(const [a,b,c] of wins){
-      if(cells[a] && cells[a]===cells[b] && cells[b]===cells[c]) return cells[a];
-    }
-    if(cells.every(c=>c)) return 'draw';
+  function tttWinner(cells) {
+    for (const [a, b, c] of wins) if (cells[a] && cells[a] === cells[b] && cells[b] === cells[c]) return cells[a];
+    if (cells.every(c => c)) return 'draw';
     return null;
   }
 
-  function minimax(cells, isAI){
+  function minimax(cells, isAI) {
     const winner = tttWinner(cells);
-    if(winner==='O') return { score: 1 };
-    if(winner==='X') return { score: -1 };
-    if(winner==='draw') return { score: 0 };
-
+    if (winner === 'O') return { score: 1 };
+    if (winner === 'X') return { score: -1 };
+    if (winner === 'draw') return { score: 0 };
     const moves = [];
-    for(let i=0;i<9;i++){
-      if(!cells[i]){
+    for (let i = 0; i < 9; i++) {
+      if (!cells[i]) {
         const next = cells.slice();
         next[i] = isAI ? 'O' : 'X';
-        const result = minimax(next, !isAI);
-        moves.push({ index:i, score: result.score });
+        moves.push({ index: i, score: minimax(next, !isAI).score });
       }
     }
-    if(isAI){
-      return moves.reduce((best,m)=> m.score>best.score ? m : best, {score:-Infinity});
-    } else {
-      return moves.reduce((best,m)=> m.score<best.score ? m : best, {score:Infinity});
-    }
+    return isAI ? moves.reduce((best, m) => m.score > best.score ? m : best, { score: -Infinity }) : moves.reduce((best, m) => m.score < best.score ? m : best, { score: Infinity });
   }
 
-  function renderTTT(){
+  function renderTTT() {
     tttBoard.innerHTML = '';
-    tttCells.forEach((val, i)=>{
+    tttCells.forEach((val, i) => {
       const cell = document.createElement('div');
-      cell.className = 'ttt-cell' + (val==='X' ? ' x' : val==='O' ? ' o' : '');
+      cell.className = 'ttt-cell' + (val === 'X' ? ' x' : val === 'O' ? ' o' : '');
       cell.textContent = val;
-      cell.addEventListener('click', ()=> tttPlayerMove(i));
+      cell.addEventListener('click', () => tttPlayerMove(i));
       tttBoard.appendChild(cell);
     });
   }
 
-  function tttPlayerMove(i){
-    if(tttOver || tttCells[i]) return;
+  function tttPlayerMove(i) {
+    if (tttOver || tttCells[i]) return;
     tttCells[i] = 'X';
     renderTTT();
     const result = tttWinner(tttCells);
-    if(result){ tttEnd(result); return; }
-
+    if (result) { tttEnd(result); return; }
     tttStatus.textContent = "My turn...";
-    setTimeout(()=>{
-      const empties = tttCells.map((v,idx)=> v ? null : idx).filter(v=>v!==null);
-      let chosenIndex;
-
-      // Mostly play a weak/random move so Arpi wins most games,
-      // but occasionally play the sharp move to keep it a real game.
+    setTimeout(() => {
+      const empties = tttCells.map((v, idx) => v ? null : idx).filter(v => v !== null);
       const playSmart = Math.random() < 0.2;
-
-      if(playSmart){
-        const best = minimax(tttCells, true);
-        chosenIndex = best.index;
-      } else {
-        chosenIndex = empties[Math.floor(Math.random()*empties.length)];
-      }
-
-      if(chosenIndex !== undefined) tttCells[chosenIndex] = 'O';
+      let chosenIndex = playSmart ? minimax(tttCells, true).index : empties[Math.floor(Math.random() * empties.length)];
+      if (chosenIndex !== undefined) tttCells[chosenIndex] = 'O';
       renderTTT();
       const result2 = tttWinner(tttCells);
-      if(result2){ tttEnd(result2); }
-      else{ tttStatus.textContent = "Your move."; }
+      if (result2) tttEnd(result2);
+      else tttStatus.textContent = "Your move.";
     }, 450);
   }
 
-  function tttEnd(result){
+  function tttEnd(result) {
     tttOver = true;
-    if(result==='O'){ tttStatus.textContent = "Prathamesh won! 😏"; }
-    else if(result==='X'){ tttStatus.textContent = "You won! 🎉"; }
-    else{ tttStatus.textContent = "It's a draw."; }
+    tttStatus.textContent = result === 'O' ? "Prathamesh won! 😏" : result === 'X' ? "You won! 🎉" : "It's a draw.";
   }
 
-  tttReset.addEventListener('click', ()=>{
+  tttReset.addEventListener('click', () => {
     tttCells = Array(9).fill('');
     tttOver = false;
     tttStatus.textContent = "Your move.";
     renderTTT();
   });
-
   renderTTT();
 
-  /* ================= AUTO-FLIPPING NOTEBOOK ================= */
+  // Auto-flipping notebook
   const notebookLines = [
     "Some hearts just know how to stay soft, no matter what the day was like.",
     "You are the calm after your own storm, even when you can't feel it yet.",
     "Not everything needs an answer today. Some things just need time.",
-    "Kind minds overthink because they care deeply — that's not a flaw.",
-    "You're allowed to rest before you're perfect, not just after.",
-    "The moon doesn't rush to be full. Neither do you need to.",
-    "Some days just need surviving, not understanding. That's alright.",
-    "You've made it through every hard day so far. That's undefeated.",
-    "Softness is not weakness — it's a quieter kind of strength.",
-    "You don't need everything figured out to still be doing great.",
-    "Every sunrise doesn't care what yesterday was. Neither should you.",
-    "Somewhere, someone is genuinely glad you exist. That's true today too.",
-    "Your best days haven't run out. There are still so many left.",
-    "You are allowed to outgrow versions of yourself without apologizing for it.",
-    "A calm mind isn't the absence of thoughts, just fewer that you chase."
+    "Kind minds overthink because they care deeply — that's not a flaw."
   ];
   let nbIndex = 0;
   const nbFront = document.getElementById('nbFront');
   const nbBack = document.getElementById('nbBack');
   const nbFrontText = document.getElementById('nbFrontText');
   const nbBackText = document.getElementById('nbBackText');
-
   nbFrontText.textContent = notebookLines[0];
   nbBackText.textContent = notebookLines[1 % notebookLines.length];
 
-  function turnPage(){
+  function turnPage() {
     nbFront.classList.add('flip');
-    nbFront.addEventListener('animationend', function onEnd(){
+    nbFront.addEventListener('animationend', function onEnd() {
       nbFront.removeEventListener('animationend', onEnd);
       nbFront.classList.remove('flip');
       nbIndex = (nbIndex + 1) % notebookLines.length;
       nbFrontText.textContent = notebookLines[nbIndex];
       nbBackText.textContent = notebookLines[(nbIndex + 1) % notebookLines.length];
-    }, { once:true });
+    }, { once: true });
   }
   setInterval(turnPage, 4200);
 
-  /* ================= MOBILE PANEL TOGGLES ================= */
+  // Mobile panel toggles
   const ticpanel = document.getElementById('ticpanel');
   const ventpanel = document.getElementById('ventpanel');
-  document.getElementById('ticToggle').addEventListener('click', ()=>{
+  const panelOverlay = document.getElementById('panelOverlay');
+
+  document.getElementById('ticToggle').addEventListener('click', () => {
     ticpanel.classList.add('open');
     ventpanel.classList.remove('open');
+    panelOverlay.classList.add('active');
   });
-  document.getElementById('ventToggle').addEventListener('click', ()=>{
+
+  document.getElementById('ventToggle').addEventListener('click', () => {
     ventpanel.classList.add('open');
     ticpanel.classList.remove('open');
+    panelOverlay.classList.add('active');
   });
-  document.querySelectorAll('[data-close]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
+
+  panelOverlay.addEventListener('click', closeAllPanels);
+
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => {
       document.getElementById(btn.dataset.close).classList.remove('open');
+      panelOverlay.classList.remove('active');
     });
   });
 
-  /* ---------- twinkling stars ---------- */
+  document.querySelectorAll('.panel-back').forEach(btn => {
+    btn.addEventListener('click', () => {
+      closeAllPanels();
+      showScreen('home');
+    });
+  });
+
+  // Twinkling stars
   const starSky = document.getElementById('starSky');
-  for(let i=0;i<50;i++){
+  for (let i = 0; i < 50; i++) {
     const s = document.createElement('div');
     s.className = 'star';
-    s.style.left = Math.random()*100+'vw';
-    s.style.top = Math.random()*100+'vh';
-    s.style.animationDuration = (Math.random()*3+2)+'s';
-    s.style.animationDelay = (Math.random()*4)+'s';
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.top = Math.random() * 100 + 'vh';
+    s.style.animationDuration = (Math.random() * 3 + 2) + 's';
+    s.style.animationDelay = (Math.random() * 4) + 's';
     starSky.appendChild(s);
   }
 
-  /* ---------- origami butterflies & birds ---------- */
+  // Origami butterflies & birds
   const origamiSky = document.getElementById('origamiSky');
+  const paperTones = [['#cdb8ec', '#8a6fb0'], ['#eccf94', '#d9b872'], ['#a98fd1', '#5b2e91'], ['#f0d9a3', '#c9a25e']];
 
-  const paperTones = [
-    ['#cdb8ec', '#8a6fb0'],
-    ['#eccf94', '#d9b872'],
-    ['#a98fd1', '#5b2e91'],
-    ['#f0d9a3', '#c9a25e']
-  ];
-
-  function butterflySVG(c1, c2){
-    return `
-      <svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
-        <g class="wing left">
-          <polygon points="30,20 4,6 8,20 4,34" fill="${c1}" stroke="${c2}" stroke-width="1"/>
-          <polygon points="30,20 10,14 12,20 10,26" fill="${c2}" opacity="0.6"/>
-        </g>
-        <g class="wing right">
-          <polygon points="30,20 56,6 52,20 56,34" fill="${c1}" stroke="${c2}" stroke-width="1"/>
-          <polygon points="30,20 50,14 48,20 50,26" fill="${c2}" opacity="0.6"/>
-        </g>
-        <rect x="28.5" y="12" width="3" height="16" rx="1.5" fill="${c2}"/>
-      </svg>`;
+  function butterflySVG(c1, c2) {
+    return `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><g class="wing left"><polygon points="30,20 4,6 8,20 4,34" fill="${c1}" stroke="${c2}" stroke-width="1"/><polygon points="30,20 10,14 12,20 10,26" fill="${c2}" opacity="0.6"/></g><g class="wing right"><polygon points="30,20 56,6 52,20 56,34" fill="${c1}" stroke="${c2}" stroke-width="1"/><polygon points="30,20 50,14 48,20 50,26" fill="${c2}" opacity="0.6"/></g><rect x="28.5" y="12" width="3" height="16" rx="1.5" fill="${c2}"/></svg>`;
   }
 
-  function birdSVG(c1, c2){
-    return `
-      <svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="4,26 40,20 30,32" fill="${c1}" stroke="${c2}" stroke-width="1"/>
-        <polygon class="bird-wing" points="18,20 38,2 34,20" fill="${c2}" opacity="0.85"/>
-        <polygon points="40,20 56,16 46,24" fill="${c1}" stroke="${c2}" stroke-width="1"/>
-      </svg>`;
+  function birdSVG(c1, c2) {
+    return `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><polygon points="4,26 40,20 30,32" fill="${c1}" stroke="${c2}" stroke-width="1"/><polygon class="bird-wing" points="18,20 38,2 34,20" fill="${c2}" opacity="0.85"/><polygon points="40,20 56,16 46,24" fill="${c1}" stroke="${c2}" stroke-width="1"/></svg>`;
   }
 
-  function spawnOrigami(kind){
+  function spawnOrigami(kind) {
     const el = document.createElement('div');
     el.className = 'origami';
-    const [c1, c2] = paperTones[Math.floor(Math.random()*paperTones.length)];
+    const [c1, c2] = paperTones[Math.floor(Math.random() * paperTones.length)];
     el.innerHTML = kind === 'bird' ? birdSVG(c1, c2) : butterflySVG(c1, c2);
-
-    const size = kind === 'bird' ? (Math.random()*22+30) : (Math.random()*18+26);
+    const size = kind === 'bird' ? (Math.random() * 22 + 30) : (Math.random() * 18 + 26);
     el.style.width = size + 'px';
-    el.style.height = (size*0.66) + 'px';
-    el.style.left = Math.random()*90 + 'vw';
-    el.style.top = Math.random()*85 + 'vh';
-
-    const dx = (Math.random()*220+120) * (Math.random()<0.5 ? -1:1);
-    const dy = (Math.random()*140+60) * (Math.random()<0.5 ? -1:1);
-    const rot = (Math.random()*20-10);
-    el.style.setProperty('--dx', dx+'px');
-    el.style.setProperty('--dy', dy+'px');
-    el.style.setProperty('--rot', rot+'deg');
-    el.style.animationDuration = (Math.random()*14+16)+'s';
-    el.style.animationDelay = (Math.random()*8)+'s';
-
-    const wingDur = kind === 'bird' ? (Math.random()*.3+.5) : (Math.random()*.4+.7);
-    el.querySelectorAll('.wing, .bird-wing').forEach(w=>{
-      w.style.animationDuration = wingDur+'s';
-    });
-
+    el.style.height = (size * 0.66) + 'px';
+    el.style.left = Math.random() * 90 + 'vw';
+    el.style.top = Math.random() * 85 + 'vh';
+    const dx = (Math.random() * 220 + 120) * (Math.random() < 0.5 ? -1 : 1);
+    const dy = (Math.random() * 140 + 60) * (Math.random() < 0.5 ? -1 : 1);
+    const rot = (Math.random() * 20 - 10);
+    el.style.setProperty('--dx', dx + 'px');
+    el.style.setProperty('--dy', dy + 'px');
+    el.style.setProperty('--rot', rot + 'deg');
+    el.style.animationDuration = (Math.random() * 14 + 16) + 's';
+    el.style.animationDelay = (Math.random() * 8) + 's';
+    const wingDur = kind === 'bird' ? (Math.random() * .3 + .5) : (Math.random() * .4 + .7);
+    el.querySelectorAll('.wing, .bird-wing').forEach(w => w.style.animationDuration = wingDur + 's');
     origamiSky.appendChild(el);
   }
 
-  for(let i=0;i<7;i++){ spawnOrigami('butterfly'); }
-  for(let i=0;i<4;i++){ spawnOrigami('bird'); }
+  for (let i = 0; i < 7; i++) spawnOrigami('butterfly');
+  for (let i = 0; i < 4; i++) spawnOrigami('bird');
 </script>
 
 </body>
