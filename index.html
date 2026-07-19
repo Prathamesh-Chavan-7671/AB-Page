@@ -426,6 +426,7 @@
     }
 
     .panel-toggle{
+      display:flex;
       z-index:7;
     }
 
@@ -441,11 +442,16 @@
   }
 
   @media (max-width: 768px){
+    .stage{
+      padding:5vh 5vw;
+    }
     #home .greet{
       font-size:clamp(1.6rem, 7vw, 3rem);
+      white-space:normal;
     }
     #home .prompt{
       font-size:clamp(0.85rem, 3vw, 1rem);
+      margin-bottom:32px;
     }
     .menu{ gap:12px; }
     .choice{ padding:18px 12px; font-size:.9rem; }
@@ -505,6 +511,10 @@
     body{
       padding-top:env(safe-area-inset-top);
       padding-bottom:env(safe-area-inset-bottom);
+    }
+
+    .stage{
+      padding:4vh 4vw;
     }
 
     #home .greet{
@@ -567,6 +577,18 @@
     .side-panel .sub{
       font-size:.8rem;
     }
+  }
+
+  @media (max-height: 480px) and (orientation: landscape){
+    .stage{ padding:3vh 5vw; }
+    .screen{ padding:3vh 6vw; justify-content:flex-start; padding-top:4vh; }
+    #home .greet{ margin-bottom:6px; }
+    #home .prompt{ margin-bottom:20px; }
+    .breathe-circle{ width:80px; height:80px; }
+    .corner-icon{ font-size:2rem; margin-bottom:10px; }
+    .corner h2{ margin-bottom:14px; }
+    .notebook, .ttt-board{ max-width:220px; }
+    .side-panel{ padding:14px 16px; overflow-y:auto; }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -1020,7 +1042,8 @@
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x000000, 0.012);
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-    camera.position.set(0, 0, 95);
+    const BASE_CAMERA_Z = 95;
+    camera.position.set(0, 0, BASE_CAMERA_Z);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -1028,8 +1051,6 @@
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
-    // No user interaction — this is purely a background, so no OrbitControls needed.
-    // A gentle constant auto-rotation of the whole scene stands in for it.
     const sceneGroup = new THREE.Group();
     scene.add(sceneGroup);
 
@@ -1070,17 +1091,99 @@
     const goldenAngle = 2.399963229728653;
     const tau = Math.PI * 2.0;
 
+    // ---------------------------------------------------------------
+    // MOUSE / TOUCH / SCROLL INTERACTIVITY
+    // The nebula reacts to pointer position (parallax tilt + slow spin
+    // steer) and to scroll / wheel input (camera dolly + a burst of
+    // extra swirl energy). Works on desktop and touch devices alike.
+    // ---------------------------------------------------------------
+    let pointerNX = 0, pointerNY = 0;        // normalized -1..1 pointer position
+    let targetTiltX = 0, targetTiltY = 0;    // desired tilt from pointer
+    let currentTiltX = 0, currentTiltY = 0;  // smoothed tilt actually applied
+    let targetSpin = 0;                      // extra yaw steer from pointer drag
+    let currentSpin = 0;
+
+    let targetZoom = 0;                      // desired camera dolly offset
+    let currentZoom = 0;                     // smoothed dolly actually applied
+    let scrollEnergy = 0;                    // burst of extra swirl speed from scroll/wheel
+    const MIN_ZOOM = -45, MAX_ZOOM = 55;
+
+    function updatePointer(clientX, clientY) {
+        pointerNX = (clientX / window.innerWidth) * 2 - 1;
+        pointerNY = (clientY / window.innerHeight) * 2 - 1;
+        targetTiltY = pointerNX * 0.55;   // left/right pointer movement -> yaw tilt
+        targetTiltX = pointerNY * 0.30;   // up/down pointer movement -> pitch tilt
+        targetSpin = pointerNX * 0.4;     // subtle extra rotational steer
+    }
+
+    window.addEventListener('pointermove', (e) => {
+        updatePointer(e.clientX, e.clientY);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length > 0) {
+            updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: true });
+
+    // Recenter gently when the pointer leaves the window
+    window.addEventListener('pointerleave', () => {
+        targetTiltX = 0; targetTiltY = 0; targetSpin = 0;
+    });
+
+    // Wheel / trackpad scroll -> dolly the camera in or out and add a
+    // brief burst of swirl energy so scrolling visibly "stirs" the nebula.
+    window.addEventListener('wheel', (e) => {
+        targetZoom += e.deltaY * 0.045;
+        targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
+        scrollEnergy = Math.min(3.0, scrollEnergy + Math.abs(e.deltaY) * 0.0025);
+    }, { passive: true });
+
+    // Since the page itself has no scrollable body, also listen for
+    // actual scroll events (in case any container does scroll) and for
+    // simple touch swipes on mobile as an equivalent gesture.
+    let lastTouchY = null;
+    window.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length > 0) lastTouchY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length > 0 && lastTouchY !== null) {
+            const dy = lastTouchY - e.touches[0].clientY;
+            targetZoom += dy * 0.12;
+            targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
+            scrollEnergy = Math.min(3.0, scrollEnergy + Math.abs(dy) * 0.01);
+            lastTouchY = e.touches[0].clientY;
+        }
+    }, { passive: true });
+    window.addEventListener('touchend', () => { lastTouchY = null; });
+
     function animate() {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime() * SPEED_MULT;
 
-        sceneGroup.rotation.y = time * 0.03;
+        // Smoothly ease toward pointer-driven tilt/spin and scroll-driven zoom
+        currentTiltX += (targetTiltX - currentTiltX) * 0.04;
+        currentTiltY += (targetTiltY - currentTiltY) * 0.04;
+        currentSpin += (targetSpin - currentSpin) * 0.04;
+        currentZoom += (targetZoom - currentZoom) * 0.06;
+        scrollEnergy *= 0.94; // decay the scroll "stir" burst back to zero
+
+        sceneGroup.rotation.y = time * 0.03 + currentSpin;
+        sceneGroup.rotation.x = currentTiltX;
+        sceneGroup.rotation.z = currentTiltY * 0.25;
+
+        camera.position.z = BASE_CAMERA_Z + currentZoom;
+        camera.position.x = currentTiltY * 6;
+        camera.position.y = -currentTiltX * 6;
+        camera.lookAt(0, 0, 0);
+
+        const effectiveRotationRate = rotationRate + scrollEnergy * 0.35;
 
         const count = COUNT;
         for (let i = 0; i < COUNT; i++) {
             const safeCount = Math.max(1.0, count);
             const unitIndex = i / safeCount;
-            const phaseTime = time * rotationRate;
+            const phaseTime = time * effectiveRotationRate;
 
             const hashA = Math.sin((i + 1.0) * 12.9898) * 43758.5453;
             const hashB = Math.sin((i + 1.0) * 78.233) * 24634.6345;
