@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,6 +42,21 @@
     height:100vh;
     min-height:100vh;
   }
+
+  /* Audio Controller */
+  .audio-toggle{
+    position:fixed; bottom:20px; right:20px; z-index:100;
+    width:48px; height:48px; border-radius:50%;
+    background:var(--gold-light); color:#1c1430; border:none;
+    font-size:1.3rem; cursor:pointer;
+    box-shadow:0 8px 20px rgba(0,0,0,.4);
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .2s ease;
+  }
+  .audio-toggle:hover{ transform:scale(1.1); }
+  .audio-toggle:active{ transform:scale(0.95); }
+  .audio-toggle.playing{ animation:pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
 
   /* Three.js nebula background canvas — sits behind everything else */
   #nebulaBg{
@@ -505,6 +521,12 @@
     }
     #ticToggle{ right:16px; }
     #ventToggle{ left:16px; }
+
+    .audio-toggle{
+      width:44px; height:44px;
+      font-size:1.2rem;
+      bottom:16px; right:70px;
+    }
   }
 
   @media (max-width: 480px){
@@ -577,6 +599,12 @@
     .side-panel .sub{
       font-size:.8rem;
     }
+
+    .audio-toggle{
+      width:40px; height:40px;
+      font-size:1.1rem;
+      bottom:12px; right:60px;
+    }
   }
 
   @media (max-height: 480px) and (orientation: landscape){
@@ -589,6 +617,7 @@
     .corner h2{ margin-bottom:14px; }
     .notebook, .ttt-board{ max-width:220px; }
     .side-panel{ padding:14px 16px; overflow-y:auto; }
+    .audio-toggle{ bottom:8px; right:8px; width:36px; height:36px; font-size:1rem; }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -650,6 +679,11 @@
 </style>
 </head>
 <body>
+
+<audio id="backgroundAudio" loop>
+  <source src="https://ik.imagekit.io/c9crfmeez/Interstellar.mpeg" type="audio/mpeg">
+</audio>
+<button class="audio-toggle" id="audioToggle" title="Toggle Background Music">🎵</button>
 
 <!-- ANIMATED NEBULA BACKGROUND -->
 <div id="nebulaBg"></div>
@@ -771,6 +805,37 @@
 </div>
 
 <script>
+  // Audio Controller
+  const audio = document.getElementById('backgroundAudio');
+  const audioToggle = document.getElementById('audioToggle');
+  let audioPlaying = false;
+
+  audioToggle.addEventListener('click', () => {
+    if (audioPlaying) {
+      audio.pause();
+      audioToggle.classList.remove('playing');
+      audioToggle.textContent = '🎵';
+    } else {
+      audio.play().catch(e => {
+        console.log("Audio playback requires user interaction or failed:", e);
+      });
+      audioToggle.classList.add('playing');
+      audioToggle.textContent = '🔇';
+    }
+    audioPlaying = !audioPlaying;
+  });
+
+  // Trigger audio play on first user interaction
+  let audioTriggered = false;
+  document.addEventListener('click', () => {
+    if (!audioTriggered) {
+      audio.play().catch(e => {
+        console.log("Audio autoplay blocked:", e);
+      });
+      audioTriggered = true;
+    }
+  }, { once: true });
+
   // Typewriter greeting
   const greetText = document.getElementById('greetText');
   const greetFull = 'Hey Arpi 👋';
@@ -1365,3 +1430,4 @@
 
 </body>
 </html>
+```
