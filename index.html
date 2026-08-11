@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,16 +6,9 @@
 <title>For Arpi — pick something</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script type="importmap">
-{
-    "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-    }
-}
-</script>
 <style>
   :root{
+    /* base palette (fallbacks — overwritten live by the EnvironmentEngine) */
     --bg1:#1c1430;
     --bg2:#150f26;
     --bg3:#0d0a1a;
@@ -28,6 +20,9 @@
     --ink:#efe7fb;
     --ink-soft:#b3a1d4;
     --paper:rgba(255,255,255,.05);
+    --paper-border:rgba(238,231,251,.12);
+    --glow:#d9b872;
+    --accent:#eccf94;
   }
 
   *{margin:0; padding:0; box-sizing:border-box;}
@@ -35,57 +30,51 @@
   body{
     font-family:'Jost', sans-serif;
     color:var(--ink);
-    background:radial-gradient(ellipse at 30% 20%, var(--bg1), transparent 60%),
-                radial-gradient(ellipse at 80% 80%, var(--bg1), transparent 55%),
-                linear-gradient(180deg, var(--bg2), var(--bg3));
     overflow-x:hidden;
     height:100vh;
     min-height:100vh;
+    background:var(--bg3);
+    transition:color .9s ease;
   }
 
-  /* Audio Controller */
-  .audio-toggle{
-    position:fixed; bottom:20px; right:20px; z-index:100;
-    width:48px; height:48px; border-radius:50%;
-    background:var(--gold-light); color:#1c1430; border:none;
-    font-size:1.3rem; cursor:pointer;
-    box-shadow:0 8px 20px rgba(0,0,0,.4);
-    display:flex; align-items:center; justify-content:center;
-    transition:transform .2s ease;
+  /* ============ ENVIRONMENT CANVAS (sky + ocean, layers 1-11) ============ */
+  #envCanvas{
+    position:fixed; inset:0; z-index:-3;
+    width:100%; height:100%; display:block; pointer-events:none;
   }
-  .audio-toggle:hover{ transform:scale(1.1); }
-  .audio-toggle:active{ transform:scale(0.95); }
-  .audio-toggle.playing{ animation:pulse 1.2s ease-in-out infinite; }
-  @keyframes pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
-
-  /* Three.js nebula background canvas — sits behind everything else */
-  #nebulaBg{
-    position:fixed; inset:0; z-index:-1;
-    pointer-events:none;
-    opacity:.6;
+  /* soft cross-fade veil used when transitioning weather / debug jumps */
+  #envVeil{
+    position:fixed; inset:0; z-index:-2; background:#000; opacity:0;
+    pointer-events:none; transition:opacity 1.4s ease;
   }
-  #nebulaBg canvas{ display:block; }
+  /* falling petals — light DOM layer, count kept tiny */
+  #petalLayer{ position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+  .petal{
+    position:absolute; top:-5%; border-radius:60% 5% 60% 5%;
+    background:linear-gradient(135deg, var(--gold-light), var(--lav-soft));
+    opacity:.55; will-change:transform;
+    animation-name:petalFall; animation-timing-function:linear; animation-iteration-count:infinite;
+  }
+  @keyframes petalFall{
+    0%{ transform:translate(0,0) rotate(0deg); opacity:0; }
+    8%{ opacity:.6; }
+    92%{ opacity:.5; }
+    100%{ transform:translate(var(--pdx), 108vh) rotate(var(--prot)); opacity:0; }
+  }
 
   .blob{
     position:fixed; border-radius:50%; filter:blur(70px);
-    opacity:.25; z-index:0; pointer-events:none;
+    opacity:.22; z-index:0; pointer-events:none;
     animation:driftBlob 24s ease-in-out infinite;
+    transition:background .9s ease;
   }
-  .b1{ width:320px; height:320px; background:var(--lav-soft); top:-80px; left:-100px; }
-  .b2{ width:260px; height:260px; background:var(--gold); bottom:-60px; right:-80px; animation-delay:-8s; }
+  .b1{ width:320px; height:320px; background:var(--glow); top:-80px; left:-100px; }
+  .b2{ width:260px; height:260px; background:var(--accent); bottom:-60px; right:-80px; animation-delay:-8s; }
   .b3{ width:200px; height:200px; background:var(--lav-mid); top:45%; left:65%; animation-delay:-14s; }
   @keyframes driftBlob{
     0%,100%{ transform:translate(0,0) scale(1); }
     50%{ transform:translate(30px,-25px) scale(1.08); }
   }
-
-  #starSky{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
-  .star{
-    position:absolute; width:2px; height:2px; border-radius:50%;
-    background:var(--gold-light); opacity:.5;
-    animation:twinkle ease-in-out infinite;
-  }
-  @keyframes twinkle{ 0%,100%{ opacity:.15; } 50%{ opacity:.8; } }
 
   #origamiSky{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
   .origami{
@@ -116,7 +105,7 @@
   }
 
   .stage{
-    position:relative; z-index:1;
+    position:relative; z-index:2;
     height:100vh; width:100vw;
     display:flex; align-items:center; justify-content:center;
     padding:6vh 6vw;
@@ -138,9 +127,10 @@
   #home .greet{
     font-family:'Caveat', cursive; font-weight:700;
     font-size:clamp(1.8rem, 6vw, 4rem);
-    color:var(--gold-light);
+    color:var(--accent);
     margin-bottom:10px;
     white-space:nowrap;
+    transition:color .9s ease;
   }
   .type-cursor{
     display:inline-block; margin-left:2px;
@@ -149,7 +139,7 @@
   @keyframes cursorBlink{ 0%,100%{ opacity:1; } 50%{ opacity:0; } }
   #home .prompt{
     color:var(--ink-soft); font-size:clamp(0.9rem, 2.5vw, 1.02rem); font-weight:300; max-width:480px;
-    margin-bottom:44px; line-height:1.8;
+    margin-bottom:44px; line-height:1.8; transition:color .9s ease;
   }
 
   .menu{
@@ -160,7 +150,7 @@
 
   .choice{
     background:var(--paper);
-    border:1px solid rgba(238,231,251,.12);
+    border:1px solid var(--paper-border);
     border-radius:18px;
     padding:22px 18px;
     color:var(--ink);
@@ -168,33 +158,34 @@
     font-size:.98rem;
     cursor:pointer;
     display:flex; flex-direction:column; align-items:center; gap:8px;
-    transition:transform .3s ease, background .3s ease, box-shadow .3s ease;
+    backdrop-filter:blur(6px);
+    transition:transform .3s ease, background .5s ease, box-shadow .3s ease, color .9s ease, border-color .9s ease;
   }
   .choice .glyph{ font-size:1.8rem; }
   .choice:hover{
     transform:translateY(-5px);
-    background:rgba(255,255,255,.09);
-    box-shadow:0 14px 30px rgba(0,0,0,.4);
+    background:rgba(255,255,255,.12);
+    box-shadow:0 14px 30px rgba(0,0,0,.35);
   }
   .choice:active{ transform:translateY(-1px) scale(.98); }
 
   .surprise{
-    margin-top:26px; background:none; border:1px solid var(--gold-light);
-    color:var(--gold-light); padding:11px 26px; border-radius:999px;
+    margin-top:26px; background:none; border:1px solid var(--accent);
+    color:var(--accent); padding:11px 26px; border-radius:999px;
     font-size:.85rem; letter-spacing:1px; cursor:pointer;
-    transition:background .3s ease, color .3s ease;
+    transition:background .3s ease, color .3s ease, border-color .9s ease;
   }
-  .surprise:hover{ background:var(--gold-light); color:#1c1430; }
+  .surprise:hover{ background:var(--accent); color:#1c1430; }
 
   .back-btn{
     position:absolute; top:26px; left:26px;
-    background:none; border:1px solid rgba(238,231,251,.22);
+    background:none; border:1px solid var(--paper-border);
     color:var(--ink-soft); padding:8px 16px; border-radius:999px;
     font-size:.78rem; letter-spacing:1px; cursor:pointer;
-    transition:background .3s ease, color .3s ease;
+    transition:background .3s ease, color .9s ease, border-color .9s ease;
     z-index:10;
   }
-  .back-btn:hover{ background:rgba(255,255,255,.08); color:var(--ink); }
+  .back-btn:hover{ background:rgba(255,255,255,.1); color:var(--ink); }
 
   .corner-icon{ font-size:2.6rem; margin-bottom:18px; }
   .corner-icon.spin{ animation:spin 6s linear infinite; display:inline-block; }
@@ -202,17 +193,18 @@
 
   .corner h2{
     font-family:'Cormorant Garamond', serif; font-weight:500;
-    font-size:clamp(1.4rem, 4vw, 2.4rem); color:var(--gold-light);
-    margin-bottom:22px;
+    font-size:clamp(1.4rem, 4vw, 2.4rem); color:var(--accent);
+    margin-bottom:22px; transition:color .9s ease;
   }
 
   .display-card{
-    background:var(--paper); border:1px solid rgba(238,231,251,.1);
+    background:var(--paper); border:1px solid var(--paper-border);
     border-radius:18px; padding:28px 32px; max-width:540px; min-height:110px;
     display:flex; align-items:center; justify-content:center;
     font-size:1.05rem; line-height:1.85; color:var(--ink);
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
-    transition:opacity .35s ease, transform .35s ease;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);
+    backdrop-filter:blur(6px);
+    transition:opacity .35s ease, transform .35s ease, background .5s ease, color .9s ease, border-color .9s ease;
     text-align:center;
   }
   .display-card.fade{ opacity:0; transform:translateY(6px); }
@@ -223,10 +215,10 @@
   }
 
   .next-btn{
-    margin-top:30px; background:var(--gold-light); color:#1c1430;
+    margin-top:30px; background:var(--accent); color:#1c1430;
     border:none; padding:12px 30px; border-radius:999px;
     font-size:.88rem; letter-spacing:1px; cursor:pointer; font-weight:600;
-    transition:transform .25s ease, box-shadow .25s ease;
+    transition:transform .25s ease, box-shadow .25s ease, background .9s ease;
   }
   .next-btn:hover{ transform:translateY(-3px); box-shadow:0 10px 24px rgba(217,184,114,.3); }
   .next-btn:active{ transform:translateY(-1px); }
@@ -235,10 +227,10 @@
   .breathe-circle{
     width:110px; height:110px; border-radius:50%;
     background:radial-gradient(circle, rgba(217,184,114,.35), rgba(169,143,209,.15));
-    border:1px solid rgba(238,231,251,.25);
+    border:1px solid var(--paper-border);
     display:flex; align-items:center; justify-content:center;
     font-size:.85rem; color:var(--ink); letter-spacing:1px;
-    transition:transform 4s ease-in-out;
+    transition:transform 4s ease-in-out, border-color .9s ease;
   }
   .breathe-circle.in{ transform:scale(1.35); }
   .breathe-circle.out{ transform:scale(1); }
@@ -248,11 +240,11 @@
   }
   .song{
     display:flex; align-items:center; justify-content:space-between; gap:14px;
-    background:var(--paper); border:1px solid rgba(238,231,251,.1);
+    background:var(--paper); border:1px solid var(--paper-border);
     border-radius:14px; padding:14px 20px; text-decoration:none; color:var(--ink);
-    transition:transform .25s ease, background .25s ease;
+    transition:transform .25s ease, background .3s ease, color .9s ease, border-color .9s ease;
   }
-  .song:hover{ transform:translateX(4px); background:rgba(255,255,255,.09); }
+  .song:hover{ transform:translateX(4px); background:rgba(255,255,255,.12); }
   .song .title{ font-size:.98rem; }
   .song .mood{ font-size:.72rem; color:var(--lav-soft); letter-spacing:1px; text-transform:uppercase; }
   .song .play-icon{ font-size:1.1rem; opacity:.8; }
@@ -265,7 +257,7 @@
     font-weight:300; margin-bottom:20px;
   }
   #note .sign{
-    font-family:'Caveat', cursive; font-size:clamp(1.5rem, 5vw, 1.8rem); color:var(--gold-light); margin-top:10px;
+    font-family:'Caveat', cursive; font-size:clamp(1.5rem, 5vw, 1.8rem); color:var(--accent); margin-top:10px; transition:color .9s ease;
   }
 
   ::selection{ background:var(--lav-mid); color:#fff; }
@@ -273,20 +265,20 @@
   .side-panel{
     position:fixed; top:50%; transform:translateY(-50%);
     width:230px; z-index:5;
-    background:rgba(255,255,255,.04);
-    border:1px solid rgba(238,231,251,.12);
+    background:rgba(255,255,255,.05);
+    border:1px solid var(--paper-border);
     border-radius:20px;
     padding:20px 18px;
     backdrop-filter:blur(10px);
     box-shadow:0 20px 50px rgba(0,0,0,.4);
-    transition:transform .4s ease, opacity .4s ease;
+    transition:transform .4s ease, opacity .4s ease, border-color .9s ease;
   }
   #ticpanel{ right:26px; }
   #ventpanel{ left:26px; }
 
   .side-panel h3{
     font-family:'Cormorant Garamond', serif; font-size:1.15rem;
-    color:var(--gold-light); text-align:center; margin-bottom:6px; font-weight:600;
+    color:var(--accent); text-align:center; margin-bottom:6px; font-weight:600; transition:color .9s ease;
   }
   .side-panel .sub{
     text-align:center; font-size:.72rem; color:var(--ink-soft); margin-bottom:14px; line-height:1.5;
@@ -302,10 +294,10 @@
   .panel-back{
     display:none;
     position:absolute; top:12px; left:14px;
-    background:none; border:1px solid rgba(238,231,251,.22);
+    background:none; border:1px solid var(--paper-border);
     color:var(--ink-soft); padding:6px 12px; border-radius:999px;
     font-size:.7rem; letter-spacing:1px; cursor:pointer;
-    transition:background .3s ease, color .3s ease;
+    transition:background .3s ease, color .9s ease;
     z-index:10;
   }
   .panel-back:hover{ background:rgba(255,255,255,.08); color:var(--ink); }
@@ -316,23 +308,23 @@
   }
   .ttt-cell{
     background:rgba(255,255,255,.05);
-    border:1px solid rgba(238,231,251,.14);
+    border:1px solid var(--paper-border);
     border-radius:10px;
     display:flex; align-items:center; justify-content:center;
     font-family:'Cormorant Garamond', serif; font-size:1.6rem; font-weight:600;
-    color:var(--gold-light); cursor:pointer;
+    color:var(--accent); cursor:pointer;
     transition:background .2s ease, transform .15s ease;
   }
   .ttt-cell:hover{ background:rgba(255,255,255,.1); }
-  .ttt-cell.x{ color:var(--gold-light); }
+  .ttt-cell.x{ color:var(--accent); }
   .ttt-cell.o{ color:var(--lav-mid); }
   .ttt-status{
     text-align:center; font-size:.85rem; color:var(--ink); min-height:20px; margin-bottom:10px;
   }
   .ttt-reset{
-    display:block; margin:0 auto; background:none; border:1px solid rgba(238,231,251,.25);
+    display:block; margin:0 auto; background:none; border:1px solid var(--paper-border);
     color:var(--ink-soft); padding:7px 18px; border-radius:999px; font-size:.75rem;
-    letter-spacing:1px; cursor:pointer; transition:background .3s ease, color .3s ease;
+    letter-spacing:1px; cursor:pointer; transition:background .3s ease, color .9s ease;
   }
   .ttt-reset:hover{ background:rgba(255,255,255,.08); color:var(--ink); }
 
@@ -373,10 +365,11 @@
     display:none;
     position:fixed; bottom:22px; z-index:6;
     width:56px; height:56px; border-radius:50%;
-    background:var(--gold-light); color:#1c1430; border:none;
+    background:var(--accent); color:#1c1430; border:none;
     font-size:1.3rem; cursor:pointer;
     box-shadow:0 10px 25px rgba(0,0,0,.4);
     align-items:center; justify-content:center;
+    transition:background .9s ease;
   }
   #ticToggle{ right:20px; }
   #ventToggle{ left:20px; }
@@ -389,243 +382,79 @@
     pointer-events:none;
   }
 
-  @media (max-width: 1180px){
-    .side-panel{
-      top:0; bottom:0; left:0; right:0;
-      transform:none;
-      height:100vh; width:100%;
-      border-radius:0; box-shadow:0 0 60px rgba(0,0,0,.5);
-      display:flex; flex-direction:column; justify-content:center;
-      transition:transform .4s ease, opacity .4s ease;
-      opacity:0; visibility:hidden;
-    }
-    .side-panel.open{
-      opacity:1; visibility:visible;
-      transform:none;
-    }
-    #ticpanel{ transform:translateX(100%); }
-    #ticpanel.open{ transform:translateX(0); }
-    #ventpanel{ transform:translateX(-100%); }
-    #ventpanel.open{ transform:translateX(0); }
+  /* ============ Environment toolbar (nature sounds + capture) ============ */
+  .env-toolbar{
+    position:fixed; top:18px; left:50%; transform:translateX(-50%);
+    z-index:50; display:flex; gap:10px; align-items:center;
+  }
+  .env-btn{
+    background:var(--paper); border:1px solid var(--paper-border);
+    color:var(--ink); backdrop-filter:blur(10px);
+    padding:9px 16px; border-radius:999px; font-size:.78rem; letter-spacing:.4px;
+    cursor:pointer; display:flex; align-items:center; gap:7px;
+    transition:background .3s ease, color .9s ease, border-color .9s ease, transform .2s ease;
+    white-space:nowrap;
+  }
+  .env-btn:hover{ transform:translateY(-2px); background:rgba(255,255,255,.12); }
+  .env-btn.on{ border-color:var(--accent); color:var(--accent); }
+  .env-eq{ display:inline-flex; gap:2px; align-items:flex-end; height:10px; }
+  .env-eq span{ width:2px; background:currentColor; opacity:.8; animation:eqBounce 1.1s ease-in-out infinite; border-radius:1px; }
+  .env-eq span:nth-child(1){ height:4px; animation-delay:-.9s; }
+  .env-eq span:nth-child(2){ height:9px; animation-delay:-.5s; }
+  .env-eq span:nth-child(3){ height:6px; animation-delay:-.2s; }
+  .env-btn:not(.on) .env-eq span{ animation-play-state:paused; height:3px; }
+  @keyframes eqBounce{ 0%,100%{ transform:scaleY(.4); } 50%{ transform:scaleY(1); } }
 
-    .panel-close{ display:block; }
-    .panel-back{ display:block; }
+  .env-panel{
+    position:fixed; top:64px; left:50%; transform:translateX(-50%) translateY(-8px);
+    z-index:50; background:rgba(20,16,36,.6); backdrop-filter:blur(14px);
+    border:1px solid var(--paper-border); border-radius:16px; padding:14px 18px;
+    display:none; flex-direction:column; gap:10px; min-width:210px;
+    opacity:0; transition:opacity .25s ease, transform .25s ease;
+  }
+  .env-panel.open{ display:flex; opacity:1; transform:translateX(-50%) translateY(0); }
+  .env-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.78rem; color:var(--ink-soft); }
+  .env-row input[type="range"]{ width:110px; accent-color:var(--accent); }
+  .env-row label{ display:flex; align-items:center; gap:6px; }
 
-    .panel-back{
-      top:20px; left:20px;
-      padding:8px 16px;
-      font-size:.78rem;
-    }
-
-    .side-panel h3{
-      font-size:1.4rem;
-      margin-bottom:10px;
-    }
-    .side-panel .sub{
-      font-size:.85rem;
-      margin-bottom:20px;
-    }
-
-    .ttt-board{
-      width:80vw; max-width:300px;
-      margin:0 auto 20px;
-    }
-    .ttt-cell{
-      font-size:2.5rem;
-    }
-
-    .notebook{
-      width:80vw; max-width:300px;
-      height:auto;
-      aspect-ratio:3/4;
-      margin:0 auto 20px;
-    }
-
-    .panel-toggle{
-      display:flex;
-      z-index:7;
-    }
-
-    .panel-overlay{
-      display:block;
-      opacity:0;
-      transition:opacity .4s ease;
-    }
-    .panel-overlay.active{
-      opacity:1;
-      pointer-events:auto;
-    }
+  .immersive-btn{
+    position:fixed; top:18px; right:18px; z-index:60;
   }
 
-  @media (max-width: 768px){
-    .stage{
-      padding:5vh 5vw;
-    }
-    #home .greet{
-      font-size:clamp(1.6rem, 7vw, 3rem);
-      white-space:normal;
-    }
-    #home .prompt{
-      font-size:clamp(0.85rem, 3vw, 1rem);
-      margin-bottom:32px;
-    }
-    .menu{ gap:12px; }
-    .choice{ padding:18px 12px; font-size:.9rem; }
-    .choice .glyph{ font-size:1.6rem; }
-
-    .corner h2{
-      font-size:clamp(1.3rem, 5vw, 2rem);
-    }
-
-    .display-card{
-      padding:20px 24px;
-      font-size:clamp(0.9rem, 2.5vw, 1.05rem);
-    }
-
-    .breathe-circle{
-      width:100px; height:100px;
-      font-size:.75rem;
-    }
-
-    .song-list{
-      max-width:90vw;
-    }
-    .song{
-      padding:12px 16px;
-      font-size:.9rem;
-    }
-
-    #note p.letter{
-      font-size:clamp(0.9rem, 3vw, 1.05rem);
-      line-height:1.8;
-    }
-
-    .next-btn{
-      padding:10px 24px;
-      font-size:.85rem;
-    }
-
-    .surprise{
-      padding:10px 20px;
-      font-size:.8rem;
-    }
-
-    .ttt-cell{
-      min-height:60px;
-    }
-
-    .panel-toggle{
-      width:52px; height:52px;
-      font-size:1.2rem;
-      bottom:16px;
-    }
-    #ticToggle{ right:16px; }
-    #ventToggle{ left:16px; }
-
-    .audio-toggle{
-      width:44px; height:44px;
-      font-size:1.2rem;
-      bottom:16px; right:70px;
-    }
+  /* "Just the view" mode — hides every card/panel/toolbar, leaving only
+     the living sky + ocean (and this one button, so it can be undone). */
+  body.immersive-mode .stage,
+  body.immersive-mode .side-panel,
+  body.immersive-mode .panel-toggle,
+  body.immersive-mode .panel-overlay,
+  body.immersive-mode .penguin-wrap,
+  body.immersive-mode #envToolbar,
+  body.immersive-mode .env-panel,
+  body.immersive-mode #envToast{
+    display:none !important;
+  }
+  body.immersive-mode .immersive-btn{
+    top:auto; bottom:20px; right:50%; transform:translateX(50%);
   }
 
-  @media (max-width: 480px){
-    body{
-      padding-top:env(safe-area-inset-top);
-      padding-bottom:env(safe-area-inset-bottom);
-    }
-
-    .stage{
-      padding:4vh 4vw;
-    }
-
-    #home .greet{
-      font-size:clamp(1.4rem, 8vw, 2.5rem);
-    }
-
-    .menu{ gap:10px; }
-    .choice{ padding:16px 10px; font-size:.85rem; }
-    .choice .glyph{ font-size:1.4rem; }
-
-    .side-panel{
-      padding:24px 20px;
-    }
-
-    .ttt-board{
-      width:85vw;
-      gap:4px;
-    }
-    .ttt-cell{
-      font-size:2rem;
-      border-radius:8px;
-    }
-
-    .notebook{
-      width:85vw;
-    }
-    .nb-text{
-      font-size:clamp(0.75rem, 3vw, 0.95rem);
-    }
-
-    .panel-toggle{
-      width:48px; height:48px;
-      font-size:1.1rem;
-      bottom:12px;
-    }
-    #ticToggle{ right:12px; }
-    #ventToggle{ left:12px; }
-
-    .back-btn{
-      top:16px; left:16px;
-      padding:6px 12px;
-      font-size:.7rem;
-    }
-
-    .panel-back{
-      top:16px; left:16px;
-      padding:6px 12px;
-      font-size:.7rem;
-    }
-
-    .panel-close{
-      top:16px; right:16px;
-      font-size:1rem;
-    }
-
-    .side-panel h3{
-      font-size:1.2rem;
-    }
-
-    .side-panel .sub{
-      font-size:.8rem;
-    }
-
-    .audio-toggle{
-      width:40px; height:40px;
-      font-size:1.1rem;
-      bottom:12px; right:60px;
-    }
+  @media (max-width:768px){
+    .immersive-btn{ top:12px; right:12px; font-size:.72rem; padding:8px 12px; }
   }
 
-  @media (max-height: 480px) and (orientation: landscape){
-    .stage{ padding:3vh 5vw; }
-    .screen{ padding:3vh 6vw; justify-content:flex-start; padding-top:4vh; }
-    #home .greet{ margin-bottom:6px; }
-    #home .prompt{ margin-bottom:20px; }
-    .breathe-circle{ width:80px; height:80px; }
-    .corner-icon{ font-size:2rem; margin-bottom:10px; }
-    .corner h2{ margin-bottom:14px; }
-    .notebook, .ttt-board{ max-width:220px; }
-    .side-panel{ padding:14px 16px; overflow-y:auto; }
-    .audio-toggle{ bottom:8px; right:8px; width:36px; height:36px; font-size:1rem; }
+  .capture-flash{
+    position:fixed; inset:0; background:#fff; opacity:0; z-index:200; pointer-events:none;
+    transition:opacity .12s ease-out;
   }
+  .capture-flash.flash{ opacity:.85; transition:none; }
 
-  @media (prefers-reduced-motion: reduce){
-    *{ animation:none !important; transition:none !important; }
-    #nebulaBg{ display:none; }
+  #envToast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(10px);
+    background:rgba(20,16,36,.75); color:var(--ink); border:1px solid var(--paper-border);
+    padding:9px 18px; border-radius:999px; font-size:.78rem; z-index:200;
+    opacity:0; pointer-events:none; transition:opacity .35s ease, transform .35s ease;
   }
+  #envToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
-  /* Little penguin waving hi to Arpi */
   .penguin-wrap{
     position:absolute; top:22px; right:26px;
     display:flex; align-items:flex-start; gap:8px;
@@ -633,7 +462,7 @@
   }
   .penguin-bubble{
     background:var(--paper);
-    border:1px solid rgba(238,231,251,.2);
+    border:1px solid var(--paper-border);
     color:var(--ink);
     padding:6px 16px 8px;
     border-radius:16px 16px 4px 16px;
@@ -642,6 +471,7 @@
     white-space:nowrap;
     box-shadow:0 8px 18px rgba(0,0,0,.3);
     animation:bubblePop .5s ease .6s both, bubbleFloat 2.6s ease-in-out 1.2s infinite;
+    transition:color .9s ease;
   }
   .penguin{
     font-size:2.3rem; line-height:1;
@@ -661,36 +491,134 @@
     0%,100%{ transform:rotate(-8deg); }
     50%{ transform:rotate(8deg); }
   }
+
+  @media (max-width:1180px){
+    .side-panel{
+      top:0; bottom:0; left:0; right:0;
+      transform:none;
+      height:100vh; width:100%;
+      border-radius:0; box-shadow:0 0 60px rgba(0,0,0,.5);
+      display:flex; flex-direction:column; justify-content:center;
+      transition:transform .4s ease, opacity .4s ease;
+      opacity:0; visibility:hidden;
+    }
+    .side-panel.open{ opacity:1; visibility:visible; transform:none; }
+    #ticpanel{ transform:translateX(100%); }
+    #ticpanel.open{ transform:translateX(0); }
+    #ventpanel{ transform:translateX(-100%); }
+    #ventpanel.open{ transform:translateX(0); }
+    .panel-close{ display:block; }
+    .panel-back{ display:block; }
+    .panel-back{ top:20px; left:20px; padding:8px 16px; font-size:.78rem; }
+    .side-panel h3{ font-size:1.4rem; margin-bottom:10px; }
+    .side-panel .sub{ font-size:.85rem; margin-bottom:20px; }
+    .ttt-board{ width:80vw; max-width:300px; margin:0 auto 20px; }
+    .ttt-cell{ font-size:2.5rem; }
+    .notebook{ width:80vw; max-width:300px; height:auto; aspect-ratio:3/4; margin:0 auto 20px; }
+    .panel-toggle{ display:flex; z-index:7; }
+    .panel-overlay{ display:block; opacity:0; transition:opacity .4s ease; }
+    .panel-overlay.active{ opacity:1; pointer-events:auto; }
+  }
+
   @media (max-width:768px){
+    .stage{ padding:5vh 5vw; }
+    #home .greet{ font-size:clamp(1.6rem, 7vw, 3rem); white-space:normal; }
+    #home .prompt{ font-size:clamp(0.85rem, 3vw, 1rem); margin-bottom:32px; }
+    .menu{ gap:12px; }
+    .choice{ padding:18px 12px; font-size:.9rem; }
+    .choice .glyph{ font-size:1.6rem; }
+    .corner h2{ font-size:clamp(1.3rem, 5vw, 2rem); }
+    .display-card{ padding:20px 24px; font-size:clamp(0.9rem, 2.5vw, 1.05rem); }
+    .breathe-circle{ width:100px; height:100px; font-size:.75rem; }
+    .song-list{ max-width:90vw; }
+    .song{ padding:12px 16px; font-size:.9rem; }
+    #note p.letter{ font-size:clamp(0.9rem, 3vw, 1.05rem); line-height:1.8; }
+    .next-btn{ padding:10px 24px; font-size:.85rem; }
+    .surprise{ padding:10px 20px; font-size:.8rem; }
+    .ttt-cell{ min-height:60px; }
+    .panel-toggle{ width:52px; height:52px; font-size:1.2rem; bottom:16px; }
+    #ticToggle{ right:16px; }
+    #ventToggle{ left:16px; }
+    .env-toolbar{ top:12px; flex-wrap:wrap; justify-content:center; width:90vw; }
+    .env-btn{ font-size:.72rem; padding:8px 12px; }
+    .env-panel{ top:auto; bottom:78px; }
+  }
+
+  @media (max-width:480px){
+    body{ padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+    .stage{ padding:4vh 4vw; }
+    #home .greet{ font-size:clamp(1.4rem, 8vw, 2.5rem); }
+    .menu{ gap:10px; }
+    .choice{ padding:16px 10px; font-size:.85rem; }
+    .choice .glyph{ font-size:1.4rem; }
+    .side-panel{ padding:24px 20px; }
+    .ttt-board{ width:85vw; gap:4px; }
+    .ttt-cell{ font-size:2rem; border-radius:8px; }
+    .notebook{ width:85vw; }
+    .nb-text{ font-size:clamp(0.75rem, 3vw, 0.95rem); }
+    .panel-toggle{ width:48px; height:48px; font-size:1.1rem; bottom:12px; }
+    #ticToggle{ right:12px; }
+    #ventToggle{ left:12px; }
+    .back-btn{ top:16px; left:16px; padding:6px 12px; font-size:.7rem; }
+    .panel-back{ top:16px; left:16px; padding:6px 12px; font-size:.7rem; }
+    .panel-close{ top:16px; right:16px; font-size:1rem; }
+    .side-panel h3{ font-size:1.2rem; }
+    .side-panel .sub{ font-size:.8rem; }
     .penguin-wrap{ top:16px; right:16px; gap:6px; }
     .penguin{ font-size:1.8rem; }
     .penguin-bubble{ font-size:1rem; padding:5px 12px 6px; }
   }
-  @media (max-width:480px){
-    .penguin-wrap{ top:12px; right:12px; }
-    .penguin{ font-size:1.5rem; }
-    .penguin-bubble{ font-size:.9rem; padding:4px 10px 5px; }
-  }
-  @media (max-height: 480px) and (orientation: landscape){
+
+  @media (max-height:480px) and (orientation:landscape){
+    .stage{ padding:3vh 5vw; }
+    .screen{ padding:3vh 6vw; justify-content:flex-start; padding-top:4vh; }
+    #home .greet{ margin-bottom:6px; }
+    #home .prompt{ margin-bottom:20px; }
+    .breathe-circle{ width:80px; height:80px; }
+    .corner-icon{ font-size:2rem; margin-bottom:10px; }
+    .corner h2{ margin-bottom:14px; }
+    .notebook, .ttt-board{ max-width:220px; }
+    .side-panel{ padding:14px 16px; overflow-y:auto; }
     .penguin-wrap{ top:8px; right:12px; }
     .penguin{ font-size:1.4rem; }
     .penguin-bubble{ font-size:.85rem; padding:3px 10px 4px; }
+    .env-toolbar{ top:8px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .blob, .origami, .wing, .bird-wing, .penguin, .penguin-bubble, .type-cursor, .env-eq span{ animation:none !important; }
+    .petal{ display:none; }
   }
 </style>
 </head>
 <body>
 
-<audio id="backgroundAudio" loop>
-  <source src="https://ik.imagekit.io/c9crfmeez/Interstellar.mpeg" type="audio/mpeg">
-</audio>
-<button class="audio-toggle" id="audioToggle" title="Toggle Background Music">🎵</button>
+<div class="capture-flash" id="captureFlash"></div>
+<div id="envToast"></div>
 
-<!-- ANIMATED NEBULA BACKGROUND -->
-<div id="nebulaBg"></div>
+<!-- LAYERS 1–11: sky + atmosphere + celestial bodies + clouds + birds(bg) + horizon + ocean + waves + reflections + mist -->
+<canvas id="envCanvas"></canvas>
+<div id="envVeil"></div>
+
+<!-- Layer: environment toolbar (nature sounds + capture) -->
+<div class="env-toolbar" id="envToolbar">
+  <button class="env-btn" id="natureSoundToggle" title="Ambient ocean &amp; wind sound">
+    <span>🌊</span><span id="natureSoundLabel">Ocean &amp; Wind</span>
+    <span class="env-eq"><span></span><span></span><span></span></span>
+  </button>
+  <button class="env-btn" id="captureBtn" title="Capture this moment">📸 Capture</button>
+</div>
+<button class="env-btn immersive-btn" id="immersiveToggle" title="Hide everything but the sky and ocean">🧘 Just the view</button>
+<div class="env-panel" id="envPanel">
+  <div class="env-row"><label><input type="checkbox" id="toggleOcean" checked> Ocean</label></div>
+  <div class="env-row"><label><input type="checkbox" id="toggleWind" checked> Wind</label></div>
+  <div class="env-row"><span>Volume</span><input type="range" id="natureVolume" min="0" max="100" value="45"></div>
+  <div class="env-row"><button class="env-btn" id="muteBtn" style="width:100%; justify-content:center;">🔈 Mute</button></div>
+</div>
 
 <div class="panel-overlay" id="panelOverlay"></div>
-<div id="starSky"></div>
 <div id="origamiSky"></div>
+<div id="petalLayer"></div>
 <div class="blob b1"></div>
 <div class="blob b2"></div>
 <div class="blob b3"></div>
@@ -805,36 +733,10 @@
 </div>
 
 <script>
-  // Audio Controller
-  const audio = document.getElementById('backgroundAudio');
-  const audioToggle = document.getElementById('audioToggle');
-  let audioPlaying = false;
-
-  audioToggle.addEventListener('click', () => {
-    if (audioPlaying) {
-      audio.pause();
-      audioToggle.classList.remove('playing');
-      audioToggle.textContent = '🎵';
-    } else {
-      audio.play().catch(e => {
-        console.log("Audio playback requires user interaction or failed:", e);
-      });
-      audioToggle.classList.add('playing');
-      audioToggle.textContent = '🔇';
-    }
-    audioPlaying = !audioPlaying;
-  });
-
-  // Trigger audio play on first user interaction
-  let audioTriggered = false;
-  document.addEventListener('click', () => {
-    if (!audioTriggered) {
-      audio.play().catch(e => {
-        console.log("Audio autoplay blocked:", e);
-      });
-      audioTriggered = true;
-    }
-  }, { once: true });
+/* =========================================================================
+   PART A — original page functionality (menu nav, corners, tic-tac-toe,
+   notebook, penguin greeting, music toggle, origami decorations). Preserved.
+   ========================================================================= */
 
   // Typewriter greeting
   const greetText = document.getElementById('greetText');
@@ -957,10 +859,7 @@
 
   document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.target)));
   document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click', () => showScreen('home')));
-  document.getElementById('surpriseBtn').addEventListener('click', () => {
-    const options = ['krishna', 'breathe', 'music', 'shayri', 'about', 'note'];
-    showScreen(options[Math.floor(Math.random() * options.length)]);
-  });
+  document.getElementById('surpriseBtn').addEventListener('click', () => surpriseReveal());
 
   // Tic Tac Toe
   const tttBoard = document.getElementById('tttBoard');
@@ -1089,32 +988,19 @@
   });
 
   document.querySelectorAll('.panel-back').forEach(btn => {
-    btn.addEventListener('click', () => {
-      closeAllPanels();
-      showScreen('home');
-    });
+    btn.addEventListener('click', () => { closeAllPanels(); showScreen('home'); });
   });
 
-  // Twinkling stars
-  const starSky = document.getElementById('starSky');
-  for (let i = 0; i < 50; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    s.style.left = Math.random() * 100 + 'vw';
-    s.style.top = Math.random() * 100 + 'vh';
-    s.style.animationDuration = (Math.random() * 3 + 2) + 's';
-    s.style.animationDelay = (Math.random() * 4) + 's';
-    starSky.appendChild(s);
-  }
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
-  // Origami butterflies & birds
+  // Origami butterflies & birds — now wind-aware and time-of-day-aware (§11, §17)
   const origamiSky = document.getElementById('origamiSky');
   const paperTones = [['#cdb8ec', '#8a6fb0'], ['#eccf94', '#d9b872'], ['#a98fd1', '#5b2e91'], ['#f0d9a3', '#c9a25e']];
 
   function butterflySVG(c1, c2) {
     return `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><g class="wing left"><polygon points="30,20 4,6 8,20 4,34" fill="${c1}" stroke="${c2}" stroke-width="1"/><polygon points="30,20 10,14 12,20 10,26" fill="${c2}" opacity="0.6"/></g><g class="wing right"><polygon points="30,20 56,6 52,20 56,34" fill="${c1}" stroke="${c2}" stroke-width="1"/><polygon points="30,20 50,14 48,20 50,26" fill="${c2}" opacity="0.6"/></g><rect x="28.5" y="12" width="3" height="16" rx="1.5" fill="${c2}"/></svg>`;
   }
-
   function birdSVG(c1, c2) {
     return `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><polygon points="4,26 40,20 30,32" fill="${c1}" stroke="${c2}" stroke-width="1"/><polygon class="bird-wing" points="18,20 38,2 34,20" fill="${c2}" opacity="0.85"/><polygon points="40,20 56,16 46,24" fill="${c1}" stroke="${c2}" stroke-width="1"/></svg>`;
   }
@@ -1122,312 +1008,682 @@
   function spawnOrigami(kind) {
     const el = document.createElement('div');
     el.className = 'origami';
+    el.dataset.kind = kind;
     const [c1, c2] = paperTones[Math.floor(Math.random() * paperTones.length)];
     el.innerHTML = kind === 'bird' ? birdSVG(c1, c2) : butterflySVG(c1, c2);
     const size = kind === 'bird' ? (Math.random() * 22 + 30) : (Math.random() * 18 + 26);
     el.style.width = size + 'px';
     el.style.height = (size * 0.66) + 'px';
     el.style.left = Math.random() * 90 + 'vw';
-    el.style.top = Math.random() * 85 + 'vh';
-    const dx = (Math.random() * 220 + 120) * (Math.random() < 0.5 ? -1 : 1);
+    el.style.top = kind === 'bird' ? (Math.random() * 35 + 8) + 'vh' : (Math.random() * 85) + 'vh';
+    const windMul = 0.6 + (window.envWind || 0.4) * 1.2;
+    const dx = (Math.random() * 220 + 120) * windMul * (Math.random() < 0.5 ? -1 : 1);
     const dy = (Math.random() * 140 + 60) * (Math.random() < 0.5 ? -1 : 1);
     const rot = (Math.random() * 20 - 10);
     el.style.setProperty('--dx', dx + 'px');
     el.style.setProperty('--dy', dy + 'px');
     el.style.setProperty('--rot', rot + 'deg');
-    el.style.animationDuration = (Math.random() * 14 + 16) + 's';
+    el.style.animationDuration = (Math.random() * 14 + 16) / windMul + 's';
     el.style.animationDelay = (Math.random() * 8) + 's';
     const wingDur = kind === 'bird' ? (Math.random() * .3 + .5) : (Math.random() * .4 + .7);
     el.querySelectorAll('.wing, .bird-wing').forEach(w => w.style.animationDuration = wingDur + 's');
     origamiSky.appendChild(el);
+    // birds fly off-screen and are removed; keep the DOM tidy
+    if (kind === 'bird') {
+      setTimeout(() => el.remove(), (parseFloat(el.style.animationDuration) + parseFloat(el.style.animationDelay || 0)) * 1000 + 500);
+    }
   }
 
-  for (let i = 0; i < 7; i++) spawnOrigami('butterfly');
-  for (let i = 0; i < 4; i++) spawnOrigami('bird');
+  const baseButterflies = prefersReducedMotion ? 0 : (isMobile ? 4 : 7);
+  for (let i = 0; i < baseButterflies; i++) spawnOrigami('butterfly');
+
+  // Birds now spawn on a schedule that respects time-of-day (§11) instead of a fixed batch.
+  function maybeSpawnBird() {
+    if (prefersReducedMotion) return;
+    const activity = window.envBirdActivity ?? 0.4; // 0 (night) .. 1 (peak dawn/dusk)
+    if (Math.random() < activity * 0.55) {
+      const group = 1 + Math.floor(Math.random() * (activity > 0.6 ? 3 : 1));
+      for (let i = 0; i < group; i++) setTimeout(() => spawnOrigami('bird'), i * 350);
+    }
+    const nextDelay = 6000 + Math.random() * 9000;
+    setTimeout(maybeSpawnBird, nextDelay);
+  }
+  setTimeout(maybeSpawnBird, 2000);
+
+/* =========================================================================
+   PART B — floating flower petals (§20, mobile/reduced-motion aware)
+   ========================================================================= */
+  const petalLayer = document.getElementById('petalLayer');
+  function spawnPetal() {
+    if (prefersReducedMotion) return;
+    if (document.hidden) return;
+    const p = document.createElement('div');
+    p.className = 'petal';
+    const size = Math.random() * 10 + 6;
+    p.style.width = size + 'px';
+    p.style.height = size * 0.8 + 'px';
+    p.style.left = Math.random() * 100 + 'vw';
+    const windMul = 0.5 + (window.envWind || 0.4) * 1.4;
+    const dx = (Math.random() * 160 + 40) * windMul * (Math.random() < 0.5 ? -1 : 1);
+    const dur = (Math.random() * 6 + 9) / windMul;
+    p.style.setProperty('--pdx', dx + 'px');
+    p.style.setProperty('--prot', (Math.random() * 300 - 150) + 'deg');
+    p.style.animationDuration = dur + 's';
+    petalLayer.appendChild(p);
+    setTimeout(() => p.remove(), dur * 1000 + 200);
+  }
+  let petalIntervalMs = isMobile ? 2600 : 1600;
+  if (!prefersReducedMotion) setInterval(() => spawnPetal(), petalIntervalMs);
+
+/* =========================================================================
+   PART C — "Surprise for you" reveal, now an immersive environment dip (§33)
+   ========================================================================= */
+  function surpriseReveal() {
+    const options = ['krishna', 'breathe', 'music', 'shayri', 'about', 'note'];
+    document.body.style.transition = 'filter 1.1s ease';
+    document.body.style.filter = 'brightness(0.82) saturate(1.08)';
+    if (window.envEngine) window.envEngine.setTimeScale(0.35);
+    for (let i = 0; i < 5; i++) setTimeout(spawnPetal, i * 180);
+    showToast('✨ a little surprise for you');
+    setTimeout(() => {
+      showScreen(options[Math.floor(Math.random() * options.length)]);
+      setTimeout(() => {
+        document.body.style.filter = '';
+        if (window.envEngine) window.envEngine.setTimeScale(1);
+      }, 2600);
+    }, 550);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('envToast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._h);
+    showToast._h = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+/* =========================================================================
+   PART D — EnvironmentEngine: real-time-driven sky + ocean (§1–§18, §22–§27)
+   Rendered on a single 2D canvas for performance (no heavy DOM / no WebGL
+   particle swarm — §27).
+   ========================================================================= */
+
+  const DEBUG_SKY = false; // flip true + use window.setDebugTime()/setWeather() from devtools
+  let debugMinutes = null; // e.g. 5*60+30 for 05:30, set via setDebugTime()
+  window.setDebugTime = function(hhmm){
+    const [h,m] = hhmm.split(':').map(Number);
+    debugMinutes = h*60 + (m||0);
+    showToast('debug time set → ' + hhmm);
+  };
+  window.setWeather = function(w){
+    if (!['clear','cloudy','rain'].includes(w)) return;
+    window.envEngine && (window.envEngine.weather = w);
+    showToast('weather → ' + w);
+  };
+
+  // ---- colour + math helpers ----
+  function hexToRgb(hex){
+    const v = hex.replace('#','');
+    const n = v.length === 3 ? v.split('').map(c=>c+c).join('') : v;
+    const num = parseInt(n,16);
+    return [(num>>16)&255, (num>>8)&255, num&255];
+  }
+  function rgbToCss(rgb, a=1){ return `rgba(${rgb[0]|0},${rgb[1]|0},${rgb[2]|0},${a})`; }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function lerpRgb(c1, c2, t){ return [lerp(c1[0],c2[0],t), lerp(c1[1],c2[1],t), lerp(c1[2],c2[2],t)]; }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+  // ---- timeline keyframes (hour-of-day → environment state) ----
+  const KEYFRAMES = [
+    { h:0,    sky:['#050a1a','#141a35'], ocean:['#050f22','#02060f'], cloud:'#1c2340', stars:1,   sun:0,   moon:.85, foam:.15, ui:'night' },
+    { h:4.5,  sky:['#0a1030','#241a3d'], ocean:['#0a1428','#03070f'], cloud:'#241d3f', stars:.9,  sun:0,   moon:.7,  foam:.15, ui:'night' },
+    { h:5.5,  sky:['#2a2350','#8a5a6e'], ocean:['#2c2440','#141024'], cloud:'#6a4f6a', stars:.35, sun:.35, moon:.2,  foam:.25, ui:'warm'  },
+    { h:6.6,  sky:['#5b6fa8','#f2a56d'], ocean:['#3a5a7a','#1c2c40'], cloud:'#f6c9a0', stars:0,   sun:1,   moon:0,   foam:.3,  ui:'warm'  },
+    { h:8,    sky:['#6fa8dc','#cfe6f5'], ocean:['#2f7fb0','#134060'], cloud:'#ffffff', stars:0,   sun:1,   moon:0,   foam:.5,  ui:'light' },
+    { h:12,   sky:['#3d8fe0','#bfe3f7'], ocean:['#1f74b8','#0e3a5c'], cloud:'#ffffff', stars:0,   sun:1,   moon:0,   foam:.6,  ui:'light' },
+    { h:15.5, sky:['#3a86d8','#a9d4ef'], ocean:['#1c68a8','#0c3252'], cloud:'#fbf7ee', stars:0,   sun:1,   moon:0,   foam:.55, ui:'light' },
+    { h:17,   sky:['#4a72b0','#f3b57a'], ocean:['#2a5a80','#12283c'], cloud:'#ffd9a0', stars:0,   sun:1,   moon:0,   foam:.5,  ui:'warm'  },
+    { h:18.3, sky:['#6a4f8a','#f0713f'], ocean:['#4a3a5c','#1c1430'], cloud:'#ff9d6b', stars:.15, sun:1,   moon:0,   foam:.45, ui:'warm'  },
+    { h:19.2, sky:['#372a5c','#a8456a'], ocean:['#2c2246','#120e22'], cloud:'#9a5c7c', stars:.4,  sun:.3,  moon:.1,  foam:.3,  ui:'warm'  },
+    { h:20.3, sky:['#1c1740','#4a2f5c'], ocean:['#161230','#080614'], cloud:'#3c2c54', stars:.7,  sun:0,   moon:.4,  foam:.2,  ui:'night' },
+    { h:22,   sky:['#0c1030','#221838'], ocean:['#0a1226','#03060f'], cloud:'#20203c', stars:.95, sun:0,   moon:.7,  foam:.15, ui:'night' },
+    { h:24,   sky:['#050a1a','#141a35'], ocean:['#050f22','#02060f'], cloud:'#1c2340', stars:1,   sun:0,   moon:.85, foam:.15, ui:'night' }
+  ];
+
+  function sampleKeyframes(t){
+    let a = KEYFRAMES[0], b = KEYFRAMES[KEYFRAMES.length-1];
+    for (let i=0;i<KEYFRAMES.length-1;i++){
+      if (t >= KEYFRAMES[i].h && t <= KEYFRAMES[i+1].h){ a = KEYFRAMES[i]; b = KEYFRAMES[i+1]; break; }
+    }
+    const span = (b.h - a.h) || 1;
+    const f = clamp((t - a.h)/span, 0, 1);
+    return {
+      skyTop: lerpRgb(hexToRgb(a.sky[0]), hexToRgb(b.sky[0]), f),
+      skyHorizon: lerpRgb(hexToRgb(a.sky[1]), hexToRgb(b.sky[1]), f),
+      oceanTop: lerpRgb(hexToRgb(a.ocean[0]), hexToRgb(b.ocean[0]), f),
+      oceanDeep: lerpRgb(hexToRgb(a.ocean[1]), hexToRgb(b.ocean[1]), f),
+      cloud: lerpRgb(hexToRgb(a.cloud), hexToRgb(b.cloud), f),
+      stars: lerp(a.stars, b.stars, f),
+      sun: lerp(a.sun, b.sun, f),
+      moon: lerp(a.moon, b.moon, f),
+      foam: lerp(a.foam, b.foam, f),
+      ui: f < 0.5 ? a.ui : b.ui
+    };
+  }
+
+  class EnvironmentEngine {
+    constructor(canvas){
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d');
+      this.dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.6 : 2);
+      this.w = 0; this.h = 0;
+      this.weather = 'clear';
+      this.timeScale = 1;
+      this.wind = 0.4;
+      this.windTarget = 0.4;
+      this.stars = [];
+      this.clouds = [];
+      this.reduced = prefersReducedMotion;
+      this.lastFrame = 0;
+      this.simMinutesAccum = null;
+      this._resize();
+      this._buildStars();
+      this._buildClouds();
+      window.addEventListener('resize', () => this._resize());
+      this.state = sampleKeyframes(12);
+      this._loop = this._loop.bind(this);
+      requestAnimationFrame(this._loop);
+    }
+    setTimeScale(s){ this.timeScale = s; }
+    _resize(){
+      this.w = window.innerWidth; this.h = window.innerHeight;
+      this.canvas.width = this.w * this.dpr;
+      this.canvas.height = this.h * this.dpr;
+      this.canvas.style.width = this.w + 'px';
+      this.canvas.style.height = this.h + 'px';
+      this.ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
+      this.horizonY = this.h * (isMobile ? 0.62 : 0.6);
+    }
+    _buildStars(){
+      const n = this.reduced ? 40 : (isMobile ? 60 : 130);
+      this.stars = Array.from({length:n}, () => ({
+        x: Math.random(), y: Math.random()*0.55,
+        r: Math.random()*1.4+0.4,
+        phase: Math.random()*Math.PI*2,
+        speed: Math.random()*0.6+0.4
+      }));
+    }
+    _buildClouds(){
+      const layers = [
+        { count: isMobile?2:4, y:[0.06,0.22], speed:2.2,  scale:[70,130], depth:0 },
+        { count: isMobile?2:3, y:[0.14,0.32], speed:5.5,  scale:[100,180], depth:1 },
+        { count: isMobile?1:3, y:[0.22,0.4],  speed:10,   scale:[130,220], depth:2 }
+      ];
+      this.clouds = [];
+      layers.forEach(layer => {
+        for (let i=0;i<layer.count;i++){
+          this.clouds.push({
+            x: Math.random(),
+            y: lerp(layer.y[0], layer.y[1], Math.random()),
+            scale: lerp(layer.scale[0], layer.scale[1], Math.random()),
+            speed: layer.speed,
+            depth: layer.depth,
+            seed: Math.random()*10
+          });
+        }
+      });
+    }
+    getMinutes(){
+      if (DEBUG_SKY && debugMinutes !== null) return debugMinutes;
+      const d = new Date();
+      return d.getHours()*60 + d.getMinutes() + d.getSeconds()/60;
+    }
+    _loop(ts){
+      requestAnimationFrame(this._loop);
+      const targetFps = isMobile ? 30 : 60;
+      const minDelta = 1000/targetFps;
+      if (ts - this.lastFrame < minDelta) return;
+      const dt = Math.min(0.12, (ts - (this.lastFrame||ts))/1000);
+      this.lastFrame = ts;
+      this.time = ts/1000;
+      this._update(dt);
+      this._draw();
+    }
+    _update(dt){
+      const minutes = this.getMinutes();
+      const t = (minutes/60) % 24;
+      this.hour = t;
+      this.state = sampleKeyframes(t);
+
+      // wind: slow drifting target with gentle easing (§17)
+      if (!this._windCheckboxOn || this._windCheckboxOn.checked) {
+        this.windTarget = 0.35 + 0.3*Math.sin(this.time*0.05) + (this.weather==='rain'?0.35:0) + (this.weather==='cloudy'?0.1:0);
+      } else {
+        this.windTarget = 0.05;
+      }
+      this.wind += (this.windTarget - this.wind) * 0.01;
+      window.envWind = this.wind;
+
+      // sun / moon elevation + position (§7,§8)
+      const sunriseT = 5.6, sunsetT = 19.0;
+      const dayFrac = clamp((t - sunriseT)/(sunsetT - sunriseT), -0.15, 1.15);
+      this.sunElevation = Math.sin(Math.PI * clamp(dayFrac,0,1)) * (dayFrac>=0 && dayFrac<=1 ? 1 : 0);
+      this.sunX = clamp(dayFrac,0,1);
+      this.sunVisible = dayFrac >= -0.02 && dayFrac <= 1.02;
+
+      let tm = t < sunsetT ? t + 24 : t; // continuous across midnight, moon opposite phase
+      const moonriseT = 19.0, moonsetT = 5.6+24;
+      const moonFrac = clamp((tm - moonriseT)/(moonsetT - moonriseT), -0.15, 1.15);
+      this.moonElevation = Math.sin(Math.PI * clamp(moonFrac,0,1)) * (moonFrac>=0 && moonFrac<=1 ? 1 : 0);
+      this.moonX = clamp(moonFrac,0,1);
+      this.moonVisible = moonFrac >= -0.02 && moonFrac <= 1.02;
+
+      // bird activity peaks around dawn / dusk, silent at night (§11)
+      const dawnPeak = Math.exp(-Math.pow(t-7,2)/6);
+      const duskPeak = Math.exp(-Math.pow(t-18,2)/6);
+      window.envBirdActivity = this._birdsOn === false ? 0 : clamp(Math.max(dawnPeak,duskPeak)*0.9 + (t>7&&t<18?0.15:0), 0, 1);
+
+      // adaptive UI (§23)
+      this._applyUI(this.state.ui);
+
+      if (!this.reduced) {
+        this.clouds.forEach(c => {
+          c.x += (c.speed * this.wind * dt) / 2600;
+          if (c.x > 1.25) c.x = -0.25;
+        });
+      }
+    }
+    _applyUI(mode){
+      if (this._uiMode === mode) return;
+      this._uiMode = mode;
+      const root = document.documentElement.style;
+      if (mode === 'light'){
+        root.setProperty('--ink', '#20304a');
+        root.setProperty('--ink-soft', '#3f5a78');
+        root.setProperty('--paper', 'rgba(255,255,255,.38)');
+        root.setProperty('--paper-border', 'rgba(20,40,60,.16)');
+        root.setProperty('--accent', '#b9762f');
+        root.setProperty('--glow', '#ffd58a');
+      } else if (mode === 'warm'){
+        root.setProperty('--ink', '#fbeee0');
+        root.setProperty('--ink-soft', '#e3bfa0');
+        root.setProperty('--paper', 'rgba(40,20,25,.32)');
+        root.setProperty('--paper-border', 'rgba(255,220,190,.22)');
+        root.setProperty('--accent', '#ffcf8e');
+        root.setProperty('--glow', '#ff8a5b');
+      } else {
+        root.setProperty('--ink', '#efe7fb');
+        root.setProperty('--ink-soft', '#b3a1d4');
+        root.setProperty('--paper', 'rgba(255,255,255,.06)');
+        root.setProperty('--paper-border', 'rgba(238,231,251,.14)');
+        root.setProperty('--accent', '#eccf94');
+        root.setProperty('--glow', '#d9b872');
+      }
+    }
+    _draw(){
+      const ctx = this.ctx, w = this.w, h = this.h, hz = this.horizonY;
+      const st = this.state;
+
+      // Layer 1+2: sky gradient + haze
+      const skyGrad = ctx.createLinearGradient(0,0,0,hz);
+      skyGrad.addColorStop(0, rgbToCss(st.skyTop));
+      skyGrad.addColorStop(1, rgbToCss(st.skyHorizon));
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0,0,w,hz+2);
+
+      if (this.weather === 'cloudy' || this.weather === 'rain'){
+        ctx.fillStyle = 'rgba(20,22,30,' + (this.weather==='rain'?0.4:0.22) + ')';
+        ctx.fillRect(0,0,w,hz+2);
+      }
+
+      // Layer 3: stars
+      if (st.stars > 0.02){
+        ctx.save();
+        this.stars.forEach(s => {
+          const tw = this.reduced ? 0.75 : (0.55 + 0.45*Math.sin(this.time*s.speed + s.phase));
+          ctx.globalAlpha = st.stars * tw;
+          ctx.fillStyle = '#fff8e6';
+          ctx.beginPath();
+          ctx.arc(s.x*w, s.y*hz, s.r, 0, Math.PI*2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      // Layer 4: sun
+      if (this.sunVisible && st.sun > 0.02){
+        const sx = this.sunX * w;
+        const sy = hz - this.sunElevation * hz * 0.82 - h*0.03;
+        const r = isMobile ? 26 : 38;
+        const glow = ctx.createRadialGradient(sx,sy,0,sx,sy,r*5);
+        const sunColor = this.hour>16.5 || this.hour<7 ? '#ff9d5c' : '#fff3c4';
+        glow.addColorStop(0, sunColor);
+        glow.addColorStop(0.15, 'rgba(255,210,140,.55)');
+        glow.addColorStop(1, 'rgba(255,210,140,0)');
+        ctx.globalAlpha = st.sun;
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(sx,sy,r*5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = sunColor;
+        ctx.beginPath(); ctx.arc(sx,sy,r,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+        this._sunScreen = {x:sx,y:sy,visible:true,color:sunColor};
+      } else { this._sunScreen = null; }
+
+      // Layer 4b: moon
+      if (this.moonVisible && st.moon > 0.02){
+        const mx = this.moonX * w;
+        const my = hz - this.moonElevation * hz * 0.82 - h*0.03;
+        const r = isMobile ? 16 : 22;
+        const glow = ctx.createRadialGradient(mx,my,0,mx,my,r*4);
+        glow.addColorStop(0, '#eef3ff');
+        glow.addColorStop(0.2, 'rgba(210,220,255,.35)');
+        glow.addColorStop(1, 'rgba(210,220,255,0)');
+        ctx.globalAlpha = st.moon;
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(mx,my,r*4,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#f4f7ff';
+        ctx.beginPath(); ctx.arc(mx,my,r,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = rgbToCss(st.skyTop, .5);
+        ctx.beginPath(); ctx.arc(mx-r*0.32,my-r*0.18,r*0.85,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+        this._moonScreen = {x:mx,y:my,visible:true};
+      } else { this._moonScreen = null; }
+
+      // Layer 5: clouds (parallax, depth-tinted, wind-driven)
+      ctx.save();
+      this.clouds.forEach(c => {
+        const cx = c.x * (w+400) - 200;
+        const cy = c.y * hz;
+        const scale = c.scale * (isMobile?0.7:1);
+        const alpha = 0.5 + c.depth*0.15;
+        ctx.globalAlpha = alpha * (this.weather==='rain'?0.6:1);
+        ctx.fillStyle = rgbToCss(st.cloud, 1);
+        ctx.filter = 'blur(' + (6+c.depth*3) + 'px)';
+        for (let k=0;k<4;k++){
+          const ox = Math.sin(c.seed+k)*scale*0.3;
+          const oy = Math.cos(c.seed+k)*scale*0.12;
+          ctx.beginPath();
+          ctx.ellipse(cx+ox, cy+oy, scale*(0.4+k*0.12), scale*0.22, 0, 0, Math.PI*2);
+          ctx.fill();
+        }
+      });
+      ctx.filter = 'none';
+      ctx.restore();
+
+      // Layer 7: horizon haze
+      const hazeGrad = ctx.createLinearGradient(0, hz-40, 0, hz+40);
+      hazeGrad.addColorStop(0, rgbToCss(st.skyHorizon, 0));
+      hazeGrad.addColorStop(0.5, rgbToCss(lerpRgb(st.skyHorizon, st.oceanTop, 0.5), 0.55));
+      hazeGrad.addColorStop(1, rgbToCss(st.oceanTop, 0));
+      ctx.fillStyle = hazeGrad;
+      ctx.fillRect(0, hz-40, w, 80);
+
+      // Layer 8: ocean base
+      const oceanGrad = ctx.createLinearGradient(0, hz, 0, h);
+      oceanGrad.addColorStop(0, rgbToCss(st.oceanTop));
+      oceanGrad.addColorStop(1, rgbToCss(st.oceanDeep));
+      ctx.fillStyle = oceanGrad;
+      ctx.fillRect(0, hz, w, h-hz);
+
+      // Layer 10: sun/moon reflection on the water
+      const src = this._sunScreen || this._moonScreen;
+      if (src){
+        const isSun = !!this._sunScreen;
+        const baseColor = isSun ? (this.hour>16.5||this.hour<7 ? [255,157,92] : [255,235,170]) : [220,228,255];
+        const bandAlpha = isSun ? st.sun*0.55 : st.moon*0.4;
+        const bandW0 = isMobile?40:60, bandW1 = isMobile?140:220;
+        const rows = isMobile?16:24;
+        for (let i=0;i<rows;i++){
+          const fy = i/rows;
+          const y = hz + fy*(h-hz);
+          const bw = lerp(bandW0, bandW1, fy);
+          const jitter = this.reduced ? 0 : Math.sin(this.time*2 + i*1.3)*bw*0.18*this.wind;
+          const cx = src.x + jitter;
+          ctx.globalAlpha = bandAlpha * (1-fy*0.55) * (this.reduced?0.6:(0.5+0.5*Math.sin(this.time*3+i)));
+          ctx.fillStyle = rgbToCss(baseColor);
+          ctx.fillRect(cx-bw/2, y, bw, Math.max(2,(h-hz)/rows*0.7));
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // Layer 9: wave layers (far / mid / foreground) + foam (§4,§16)
+      const waveLayers = [
+        { amp:4,  freq:0.02, speed:0.25, yOff:0.06, alpha:0.18, color:st.oceanDeep, foam:false },
+        { amp:7,  freq:0.028,speed:0.42, yOff:0.30, alpha:0.28, color:lerpRgb(st.oceanTop, st.oceanDeep, 0.4), foam:false },
+        { amp:11, freq:0.017,speed:0.65, yOff:0.6,  alpha:0.35, color:lerpRgb(st.oceanTop, [255,255,255], 0.08), foam:true },
+        { amp:15, freq:0.024,speed:0.9,  yOff:0.86, alpha:0.4,  color:lerpRgb(st.oceanTop, [255,255,255], 0.14), foam:true }
+      ];
+      const oceanH = h-hz;
+      const windAmp = this.weather==='rain' ? 1.6 : (1 + this.wind*0.8);
+      waveLayers.forEach((layer, li) => {
+        const baseY = hz + layer.yOff*oceanH;
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        ctx.lineTo(0, baseY);
+        const step = isMobile ? 14 : 8;
+        for (let x=0; x<=w; x+=step){
+          const y = baseY + Math.sin(x*layer.freq + this.time*layer.speed*windAmp + li*2) * layer.amp * windAmp
+                    + Math.sin(x*layer.freq*2.3 - this.time*layer.speed*0.6) * layer.amp*0.3;
+          ctx.lineTo(x,y);
+        }
+        ctx.lineTo(w,h);
+        ctx.closePath();
+        ctx.globalAlpha = layer.alpha;
+        ctx.fillStyle = rgbToCss(layer.color);
+        ctx.fill();
+
+        if (layer.foam){
+          ctx.globalAlpha = clamp(st.foam,0,1) * 0.7;
+          ctx.strokeStyle = 'rgba(255,255,255,.75)';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          for (let x=0; x<=w; x+=step*2){
+            const y = baseY + Math.sin(x*layer.freq + this.time*layer.speed*windAmp + li*2) * layer.amp * windAmp;
+            if (x===0) ctx.moveTo(x,y-1); else ctx.lineTo(x,y-1);
+          }
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      });
+
+      // sparkle highlights on the water (subtle, day-only)
+      if (!this.reduced && st.sun > 0.5){
+        ctx.save();
+        for (let i=0;i<(isMobile?10:18);i++){
+          const rx = (Math.sin(i*12.9+this.time*0.3)*0.5+0.5)*w;
+          const ry = hz + ((i*97)%100)/100*oceanH;
+          const tw = 0.4+0.6*Math.sin(this.time*3+i);
+          ctx.globalAlpha = 0.18*st.sun*tw;
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(rx, ry, 2, 2);
+        }
+        ctx.restore();
+      }
+
+      // Layer 11: sea mist near horizon — stronger at dawn/dusk/night
+      const mistStrength = clamp(0.25 + st.stars*0.35 + (this.hour>4&&this.hour<7?0.25:0) + (this.hour>17&&this.hour<20?0.2:0), 0, 0.75);
+      const mistGrad = ctx.createLinearGradient(0, hz-14, 0, hz+60);
+      mistGrad.addColorStop(0, 'rgba(255,255,255,0)');
+      mistGrad.addColorStop(0.5, `rgba(255,255,255,${mistStrength*0.35})`);
+      mistGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = mistGrad;
+      ctx.fillRect(0, hz-14, w, 74);
+
+      // rain overlay (weather system stub, §14)
+      if (this.weather === 'rain' && !this.reduced){
+        ctx.strokeStyle = 'rgba(200,215,235,.35)';
+        ctx.lineWidth = 1;
+        for (let i=0;i<(isMobile?40:90);i++){
+          const rx = (i*53 + this.time*400) % w;
+          const ry = (i*97 + this.time*900) % h;
+          ctx.beginPath();
+          ctx.moveTo(rx,ry);
+          ctx.lineTo(rx-4,ry+14);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  const envCanvas = document.getElementById('envCanvas');
+  const envEngine = new EnvironmentEngine(envCanvas);
+  window.envEngine = envEngine;
+
+/* =========================================================================
+   PART E — ambient nature-sound engine (Web Audio synthesis, no external
+   audio files needed; respects autoplay restrictions — §5,§12,§13,§30)
+   ========================================================================= */
+  const NatureSound = {
+    ctx: null, master: null,
+    oceanGain: null, windGain: null,
+    oceanFilter: null, running: false, muted: false,
+    _windTimer: null,
+
+    ensureContext(){
+      if (this.ctx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.45;
+      this.master.connect(this.ctx.destination);
+      this._buildOcean();
+      this._buildWind();
+    },
+    _noiseBuffer(seconds=4){
+      const sr = this.ctx.sampleRate;
+      const buf = this.ctx.createBuffer(1, sr*seconds, sr);
+      const data = buf.getChannelData(0);
+      let last = 0;
+      for (let i=0;i<data.length;i++){
+        const white = Math.random()*2-1;
+        last = (last + 0.02*white) / 1.02; // gentle brown-ish noise for a fuller "swoosh"
+        data[i] = last*3.2;
+      }
+      return buf;
+    },
+    _buildOcean(){
+      const src = this.ctx.createBufferSource();
+      src.buffer = this._noiseBuffer(6);
+      src.loop = true;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 900;
+      const gain = this.ctx.createGain();
+      gain.gain.value = 0;
+      src.connect(filter); filter.connect(gain); gain.connect(this.master);
+      src.start();
+      this.oceanGain = gain; this.oceanFilter = filter;
+      this._swellLFO();
+    },
+    _swellLFO(){
+      // slow randomized swell so it never sounds like a perfect loop (§13)
+      const step = () => {
+        if (!this.ctx) return;
+        const target = 0.22 + Math.random()*0.18;
+        const dur = 3.5 + Math.random()*3;
+        this.oceanGain.gain.cancelScheduledValues(this.ctx.currentTime);
+        this.oceanGain.gain.linearRampToValueAtTime(this.running && !this.muted ? target : 0, this.ctx.currentTime + dur);
+        this.oceanFilter.frequency.linearRampToValueAtTime(700 + Math.random()*500, this.ctx.currentTime + dur);
+        this._swellTimer = setTimeout(step, dur*1000);
+      };
+      step();
+    },
+    _buildWind(){
+      const src = this.ctx.createBufferSource();
+      src.buffer = this._noiseBuffer(5);
+      src.loop = true;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 400;
+      filter.Q.value = 0.6;
+      const gain = this.ctx.createGain();
+      gain.gain.value = 0;
+      src.connect(filter); filter.connect(gain); gain.connect(this.master);
+      src.start();
+      this.windGain = gain; this.windFilter = filter;
+      this._windVariation();
+    },
+    _windVariation(){
+      const step = () => {
+        if (!this.ctx) return;
+        const wind = window.envWind ?? 0.4;
+        const target = this.running && !this.muted && (this._windOn !== false) ? clamp(0.03 + wind*0.12, 0, 0.2) : 0;
+        const dur = 4 + Math.random()*4;
+        this.windGain.gain.cancelScheduledValues(this.ctx.currentTime);
+        this.windGain.gain.linearRampToValueAtTime(target, this.ctx.currentTime + dur);
+        this._windTimer = setTimeout(step, dur*1000);
+      };
+      step();
+    },
+    start(){
+      this.ensureContext();
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      this.running = true;
+    },
+    stop(){ this.running = false; },
+    setMuted(m){
+      this.muted = m;
+      if (this.master) this.master.gain.setTargetAtTime(m?0:0.45, this.ctx?.currentTime||0, 0.3);
+    },
+    setVolume(v){ if (this.master) this.master.gain.setTargetAtTime(v, this.ctx?.currentTime||0, 0.2); }
+  };
+
+  const natureBtn = document.getElementById('natureSoundToggle');
+  const natureLabel = document.getElementById('natureSoundLabel');
+  const envPanel = document.getElementById('envPanel');
+  let natureOn = false;
+  natureBtn.addEventListener('click', () => {
+    natureOn = !natureOn;
+    natureBtn.classList.toggle('on', natureOn);
+    natureLabel.textContent = natureOn ? 'Ocean & Wind On' : 'Ocean & Wind';
+    if (natureOn) { NatureSound.start(); envPanel.classList.add('open'); }
+    else { NatureSound.stop(); envPanel.classList.remove('open'); }
+  });
+
+  document.getElementById('toggleOcean').addEventListener('change', (e) => {
+    NatureSound.oceanGain && (NatureSound.oceanGain.gain.value = e.target.checked ? NatureSound.oceanGain.gain.value : 0);
+    NatureSound._oceanOn = e.target.checked;
+  });
+  document.getElementById('toggleWind').addEventListener('change', (e) => { NatureSound._windOn = e.target.checked; });
+  document.getElementById('natureVolume').addEventListener('input', (e) => NatureSound.setVolume(e.target.value/100*0.6));
+  document.getElementById('muteBtn').addEventListener('click', (e) => {
+    NatureSound.setMuted(!NatureSound.muted);
+    e.target.textContent = NatureSound.muted ? '🔇 Unmute' : '🔈 Mute';
+  });
+
+/* =========================================================================
+   PART F0 — "Just the view": hides every card/panel/toolbar so only the
+   living sky + ocean (and this button) remain on screen.
+   ========================================================================= */
+  const immersiveBtn = document.getElementById('immersiveToggle');
+  let immersive = false;
+  immersiveBtn.addEventListener('click', () => {
+    immersive = !immersive;
+    document.body.classList.toggle('immersive-mode', immersive);
+    immersiveBtn.textContent = immersive ? '↩ Bring it back' : '🧘 Just the view';
+  });
+
+/* =========================================================================
+   PART F — capture moment (§34): snapshots the live sky+ocean canvas
+   ========================================================================= */
+  document.getElementById('captureBtn').addEventListener('click', () => {
+    const flash = document.getElementById('captureFlash');
+    flash.classList.add('flash');
+    setTimeout(() => flash.classList.remove('flash'), 140);
+    try {
+      const url = envCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+      a.href = url;
+      a.download = `moment-${stamp}.png`;
+      a.click();
+      showToast('📸 moment captured');
+    } catch(err){
+      showToast('capture unavailable on this browser');
+    }
+  });
 </script>
-
-<!-- ================= NEBULA PARTICLE BACKGROUND (three.js) ================= -->
-<script type="module">
-    import * as THREE from 'three';
-    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-
-    const container = document.getElementById('nebulaBg');
-
-    // CONFIG — tuned down from the original since this now runs as a background layer
-    const COUNT = 7000;
-    const SPEED_MULT = 0.6;
-
-    // SETUP
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000000, 0.012);
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-    const BASE_CAMERA_Z = 95;
-    camera.position.set(0, 0, BASE_CAMERA_Z);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
-
-    const sceneGroup = new THREE.Group();
-    scene.add(sceneGroup);
-
-    // POST PROCESSING
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.4, 0.4, 0.85);
-    bloomPass.strength = 1.3; bloomPass.radius = 0.4; bloomPass.threshold = 0;
-    composer.addPass(bloomPass);
-
-    // SWARM OBJECTS
-    const dummy = new THREE.Object3D();
-    const color = new THREE.Color();
-    const target = new THREE.Vector3();
-
-    const geometry = new THREE.TetrahedronGeometry(0.25);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
-    const instancedMesh = new THREE.InstancedMesh(geometry, material, COUNT);
-    instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    sceneGroup.add(instancedMesh);
-
-    const positions = [];
-    for (let i = 0; i < COUNT; i++) {
-        positions.push(new THREE.Vector3((Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100));
-        instancedMesh.setColorAt(i, color.setHex(0x00ff88));
-    }
-
-    // Fixed "control" values (was previously exposed via a debug panel)
-    const nebulaSize = 30.0;
-    const petalCurl = 1.15;
-    const rotationRate = 0.32;
-    const cloudDepth = 3.4;
-    const corePulse = 0.75;
-    const turbulence = 0.7;
-
-    const clock = new THREE.Clock();
-    const goldenAngle = 2.399963229728653;
-    const tau = Math.PI * 2.0;
-
-    // ---------------------------------------------------------------
-    // MOUSE / TOUCH / SCROLL INTERACTIVITY
-    // The nebula reacts to pointer position (parallax tilt + slow spin
-    // steer) and to scroll / wheel input (camera dolly + a burst of
-    // extra swirl energy). Works on desktop and touch devices alike.
-    // ---------------------------------------------------------------
-    let pointerNX = 0, pointerNY = 0;        // normalized -1..1 pointer position
-    let targetTiltX = 0, targetTiltY = 0;    // desired tilt from pointer
-    let currentTiltX = 0, currentTiltY = 0;  // smoothed tilt actually applied
-    let targetSpin = 0;                      // extra yaw steer from pointer drag
-    let currentSpin = 0;
-
-    let targetZoom = 0;                      // desired camera dolly offset
-    let currentZoom = 0;                     // smoothed dolly actually applied
-    let scrollEnergy = 0;                    // burst of extra swirl speed from scroll/wheel
-    const MIN_ZOOM = -45, MAX_ZOOM = 55;
-
-    function updatePointer(clientX, clientY) {
-        pointerNX = (clientX / window.innerWidth) * 2 - 1;
-        pointerNY = (clientY / window.innerHeight) * 2 - 1;
-        targetTiltY = pointerNX * 0.55;   // left/right pointer movement -> yaw tilt
-        targetTiltX = pointerNY * 0.30;   // up/down pointer movement -> pitch tilt
-        targetSpin = pointerNX * 0.4;     // subtle extra rotational steer
-    }
-
-    window.addEventListener('pointermove', (e) => {
-        updatePointer(e.clientX, e.clientY);
-    }, { passive: true });
-
-    window.addEventListener('touchmove', (e) => {
-        if (e.touches && e.touches.length > 0) {
-            updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-        }
-    }, { passive: true });
-
-    // Recenter gently when the pointer leaves the window
-    window.addEventListener('pointerleave', () => {
-        targetTiltX = 0; targetTiltY = 0; targetSpin = 0;
-    });
-
-    // Wheel / trackpad scroll -> dolly the camera in or out and add a
-    // brief burst of swirl energy so scrolling visibly "stirs" the nebula.
-    window.addEventListener('wheel', (e) => {
-        targetZoom += e.deltaY * 0.045;
-        targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
-        scrollEnergy = Math.min(3.0, scrollEnergy + Math.abs(e.deltaY) * 0.0025);
-    }, { passive: true });
-
-    // Since the page itself has no scrollable body, also listen for
-    // actual scroll events (in case any container does scroll) and for
-    // simple touch swipes on mobile as an equivalent gesture.
-    let lastTouchY = null;
-    window.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches.length > 0) lastTouchY = e.touches[0].clientY;
-    }, { passive: true });
-    window.addEventListener('touchmove', (e) => {
-        if (e.touches && e.touches.length > 0 && lastTouchY !== null) {
-            const dy = lastTouchY - e.touches[0].clientY;
-            targetZoom += dy * 0.12;
-            targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
-            scrollEnergy = Math.min(3.0, scrollEnergy + Math.abs(dy) * 0.01);
-            lastTouchY = e.touches[0].clientY;
-        }
-    }, { passive: true });
-    window.addEventListener('touchend', () => { lastTouchY = null; });
-
-    function animate() {
-        requestAnimationFrame(animate);
-        const time = clock.getElapsedTime() * SPEED_MULT;
-
-        // Smoothly ease toward pointer-driven tilt/spin and scroll-driven zoom
-        currentTiltX += (targetTiltX - currentTiltX) * 0.04;
-        currentTiltY += (targetTiltY - currentTiltY) * 0.04;
-        currentSpin += (targetSpin - currentSpin) * 0.04;
-        currentZoom += (targetZoom - currentZoom) * 0.06;
-        scrollEnergy *= 0.94; // decay the scroll "stir" burst back to zero
-
-        sceneGroup.rotation.y = time * 0.03 + currentSpin;
-        sceneGroup.rotation.x = currentTiltX;
-        sceneGroup.rotation.z = currentTiltY * 0.25;
-
-        camera.position.z = BASE_CAMERA_Z + currentZoom;
-        camera.position.x = currentTiltY * 6;
-        camera.position.y = -currentTiltX * 6;
-        camera.lookAt(0, 0, 0);
-
-        const effectiveRotationRate = rotationRate + scrollEnergy * 0.35;
-
-        const count = COUNT;
-        for (let i = 0; i < COUNT; i++) {
-            const safeCount = Math.max(1.0, count);
-            const unitIndex = i / safeCount;
-            const phaseTime = time * effectiveRotationRate;
-
-            const hashA = Math.sin((i + 1.0) * 12.9898) * 43758.5453;
-            const hashB = Math.sin((i + 1.0) * 78.233) * 24634.6345;
-            const hashC = Math.sin((i + 1.0) * 39.425) * 15731.7431;
-
-            const randA = hashA - Math.floor(hashA);
-            const randB = hashB - Math.floor(hashB);
-            const randC = hashC - Math.floor(hashC);
-
-            const signedA = randA * 2.0 - 1.0;
-            const signedB = randB * 2.0 - 1.0;
-            const signedC = randC * 2.0 - 1.0;
-
-            let px = 0.0, py = 0.0, pz = 0.0;
-            let hue = 0.93, saturation = 0.9, lightness = 0.5;
-
-            if (unitIndex < 0.70) {
-                const local = unitIndex / 0.70;
-                const layerPosition = local * 7.0;
-                const layer = Math.min(6.0, Math.floor(layerPosition));
-                const layerFraction = layerPosition - layer;
-                const petalCount = 7.0 + layer;
-                const petalPosition = layerFraction * petalCount;
-                const petal = Math.floor(petalPosition);
-                const along = petalPosition - petal;
-                const petalArc = Math.sin(Math.PI * along);
-                const layerScale = layer / 6.0;
-                const breathing = 1.0 + 0.035 * Math.sin(time * corePulse + layer * 0.9);
-                const baseAngle = (petal / petalCount) * tau + layer * goldenAngle * 0.34;
-                const curlAngle = baseAngle + phaseTime * (0.34 - layerScale * 0.18) + petalCurl * (along - 0.18) * (0.75 + layerScale * 0.85) + signedC * 0.045 * turbulence;
-                const radialStart = nebulaSize * (0.08 + layerScale * 0.43);
-                const radialGrowth = nebulaSize * (0.20 + layerScale * 0.22) * along;
-                const radialRipple = nebulaSize * 0.018 * turbulence * Math.sin(along * 13.0 + layer * 2.1 + time * 0.42);
-                const radius = (radialStart + radialGrowth + radialRipple) * breathing;
-                const petalWidth = nebulaSize * (0.025 + layerScale * 0.055) * petalArc * (0.35 + 0.65 * randB);
-                const sideOffset = signedA * petalWidth;
-                const ca = Math.cos(curlAngle), sa = Math.sin(curlAngle);
-                const tangentAngle = curlAngle + Math.PI * 0.5;
-                const ct = Math.cos(tangentAngle), st = Math.sin(tangentAngle);
-
-                px = ca * radius + ct * sideOffset;
-                pz = sa * radius + st * sideOffset;
-                py = signedB * cloudDepth * petalArc * (0.35 + layerScale * 0.95) + Math.sin(curlAngle * 3.0 - time * 0.28 + layer) * cloudDepth * 0.12 * turbulence;
-
-                const dustLane = 0.5 + 0.5 * Math.sin(petal * 2.7 + along * 18.0 + layer * 1.3);
-                const edgeGlow = Math.pow(petalArc, 0.45);
-
-                hue = 0.955 - layerScale * 0.085 + signedC * 0.018;
-                saturation = 0.72 + edgeGlow * 0.26;
-                lightness = 0.14 + edgeGlow * 0.48 + (1.0 - layerScale) * 0.10 - dustLane * 0.10;
-            } else if (unitIndex < 0.84) {
-                const local = (unitIndex - 0.70) / 0.14;
-                const coreRadius = nebulaSize * 0.16 * Math.pow(local, 0.36);
-                const coreTheta = i * goldenAngle + phaseTime * 0.8;
-                const coreY = 1.0 - 2.0 * randB;
-                const coreRing = Math.sqrt(Math.max(0.0, 1.0 - coreY * coreY));
-                const pulse = 1.0 + 0.13 * Math.sin(time * corePulse * 2.0 + i * 0.013);
-
-                px = Math.cos(coreTheta) * coreRing * coreRadius * pulse;
-                py = coreY * coreRadius * pulse;
-                pz = Math.sin(coreTheta) * coreRing * coreRadius * pulse;
-
-                hue = 0.07 + randC * 0.05;
-                saturation = 0.52 + randA * 0.28;
-                lightness = 0.56 + (1.0 - local) * 0.38;
-            } else if (unitIndex < 0.96) {
-                const local = (unitIndex - 0.84) / 0.12;
-                const haloAngle = i * goldenAngle + phaseTime * 0.12;
-                const haloRadius = nebulaSize * (0.72 + local * 0.66 + signedA * 0.08);
-                const haloWarp = 1.0 + 0.10 * Math.sin(haloAngle * 5.0 + time * 0.25) + 0.05 * turbulence * Math.sin(haloAngle * 11.0 - time * 0.17);
-
-                px = Math.cos(haloAngle) * haloRadius * haloWarp;
-                pz = Math.sin(haloAngle) * haloRadius * haloWarp;
-                py = signedB * cloudDepth * (1.2 + local * 1.8) + Math.sin(haloAngle * 2.0 + time * 0.2) * cloudDepth * 0.35;
-
-                hue = 0.79 + randC * 0.13;
-                saturation = 0.58 + randA * 0.30;
-                lightness = 0.12 + (1.0 - local) * 0.22 + randB * 0.12;
-            } else {
-                const local = (unitIndex - 0.96) / 0.04;
-                const starAngle = i * goldenAngle;
-                const starY = signedB;
-                const starRing = Math.sqrt(Math.max(0.0, 1.0 - starY * starY));
-                const starRadius = nebulaSize * (1.25 + local * 1.10 + randA * 0.55);
-                const twinkle = 0.5 + 0.5 * Math.sin(time * (1.2 + randC * 2.2) + i * 0.17);
-
-                px = Math.cos(starAngle) * starRing * starRadius;
-                py = starY * starRadius * 0.72;
-                pz = Math.sin(starAngle) * starRing * starRadius;
-
-                hue = 0.55 + randC * 0.12;
-                saturation = 0.18 + randA * 0.35;
-                lightness = 0.32 + twinkle * 0.50;
-            }
-
-            lightness = Math.max(0.02, Math.min(0.98, lightness));
-            saturation = Math.max(0.0, Math.min(1.0, saturation));
-            hue = hue - Math.floor(hue);
-
-            target.set(px, py, pz);
-            color.setHSL(hue, saturation, lightness);
-
-            positions[i].lerp(target, 0.1);
-            dummy.position.copy(positions[i]);
-            dummy.updateMatrix();
-            instancedMesh.setMatrixAt(i, dummy.matrix);
-            instancedMesh.setColorAt(i, color);
-        }
-        instancedMesh.instanceMatrix.needsUpdate = true;
-        instancedMesh.instanceColor.needsUpdate = true;
-
-        composer.render();
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        composer.setSize(window.innerWidth, window.innerHeight);
-    });
-</script>
-
 </body>
 </html>
-
