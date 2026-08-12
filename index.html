@@ -40,26 +40,51 @@
   /* ============ ENVIRONMENT CANVAS (sky + ocean, layers 1-11) ============ */
   #envCanvas{
     position:fixed; inset:0; z-index:-3;
-    width:100%; height:100%; display:block; pointer-events:none;
+    width:100%; height:100%; display:block; pointer-events:auto;
+    transition:filter 1.3s ease;
+    cursor:default;
   }
+  #envCanvas.calm-tint{ filter:saturate(.82) hue-rotate(-6deg) brightness(.95); }
   /* soft cross-fade veil used when transitioning weather / debug jumps */
   #envVeil{
     position:fixed; inset:0; z-index:-2; background:#000; opacity:0;
     pointer-events:none; transition:opacity 1.4s ease;
   }
-  /* falling petals — light DOM layer, count kept tiny */
-  #petalLayer{ position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
-  .petal{
-    position:absolute; top:-5%; border-radius:60% 5% 60% 5%;
-    background:linear-gradient(135deg, var(--gold-light), var(--lav-soft));
-    opacity:.55; will-change:transform;
-    animation-name:petalFall; animation-timing-function:linear; animation-iteration-count:infinite;
+
+  /* cinematic vignette (§ "visual polish") */
+  #vignette{
+    position:fixed; inset:0; z-index:3; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 42%, rgba(4,4,12,.5) 100%);
+    opacity:.7; transition:opacity 1.6s ease, background 1.6s ease;
   }
-  @keyframes petalFall{
-    0%{ transform:translate(0,0) rotate(0deg); opacity:0; }
-    8%{ opacity:.6; }
-    92%{ opacity:.5; }
-    100%{ transform:translate(var(--pdx), 108vh) rotate(var(--prot)); opacity:0; }
+  #vignette.strong{
+    opacity:.92;
+    background:radial-gradient(ellipse at center, transparent 30%, rgba(4,4,12,.72) 100%);
+  }
+
+  /* drifting paper boat / bottle with a hidden note (§ "little interactive treats") */
+  #seaDriftLayer{ position:fixed; inset:0; z-index:8; pointer-events:none; overflow:hidden; }
+  .sea-drift{
+    position:absolute; font-size:1.6rem; pointer-events:auto; cursor:pointer;
+    filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));
+    animation-name:driftAcross; animation-timing-function:linear; animation-iteration-count:1;
+    transition:transform .2s ease;
+  }
+  .sea-drift:hover{ transform:scale(1.15); }
+  @keyframes driftAcross{
+    0%{ transform:translateX(-8vw) translateY(0) rotate(-4deg); }
+    50%{ transform:translateX(50vw) translateY(-6px) rotate(3deg); }
+    100%{ transform:translateX(108vw) translateY(0) rotate(-3deg); }
+  }
+
+  /* wind compass pill */
+  .wind-compass{ cursor:default; }
+  .compass-needle{
+    display:inline-block; transition:transform .4s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .sea-drift{ animation:none !important; display:none; }
   }
 
   .blob{
@@ -74,34 +99,6 @@
   @keyframes driftBlob{
     0%,100%{ transform:translate(0,0) scale(1); }
     50%{ transform:translate(30px,-25px) scale(1.08); }
-  }
-
-  #origamiSky{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
-  .origami{
-    position:absolute;
-    opacity:.5;
-    animation-name:driftFly;
-    animation-timing-function:ease-in-out;
-    animation-iteration-count:infinite;
-    animation-direction:alternate;
-    filter:drop-shadow(0 4px 6px rgba(0,0,0,.25));
-  }
-  .origami svg{ width:100%; height:100%; display:block; }
-  @keyframes driftFly{
-    0%{ transform:translate(0,0) rotate(0deg); }
-    100%{ transform:translate(var(--dx), var(--dy)) rotate(var(--rot)); }
-  }
-  .wing{ transform-box:fill-box; animation:flap 1s ease-in-out infinite; }
-  .wing.left{ transform-origin:100% 50%; }
-  .wing.right{ transform-origin:0% 50%; }
-  @keyframes flap{
-    0%,100%{ transform:scaleX(1); }
-    50%{ transform:scaleX(.45); }
-  }
-  .bird-wing{ transform-box:fill-box; transform-origin:50% 100%; animation:birdFlap 0.7s ease-in-out infinite; }
-  @keyframes birdFlap{
-    0%,100%{ transform:rotate(0deg); }
-    50%{ transform:rotate(-28deg); }
   }
 
   .stage{
@@ -262,6 +259,18 @@
 
   ::selection{ background:var(--lav-mid); color:#fff; }
 
+  /* Visible keyboard focus — default outlines get lost against the dark
+     gradient background, so give every interactive element a clear ring. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  [tabindex]:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:3px;
+    border-radius:6px;
+  }
+  .ttt-cell:focus-visible{ outline-offset:-2px; }
+
   .side-panel{
     position:fixed; top:50%; transform:translateY(-50%);
     width:230px; z-index:5;
@@ -417,6 +426,19 @@
   .env-row input[type="range"]{ width:110px; accent-color:var(--accent); }
   .env-row label{ display:flex; align-items:center; gap:6px; }
 
+  .env-panel-section + .env-panel-section{
+    margin-top:4px; padding-top:12px; border-top:1px solid var(--paper-border);
+  }
+  .env-panel-heading{
+    font-size:.66rem; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--ink-soft); opacity:.8; margin-bottom:8px;
+  }
+  .env-weather-row{ display:flex; gap:6px; justify-content:space-between; }
+  .env-chip{ padding:7px 10px; font-size:.72rem; flex:1; justify-content:center; }
+  .env-chip.active{ border-color:var(--accent); color:var(--accent); background:rgba(255,255,255,.1); }
+  .env-panel-link{ font-size:.78rem; }
+  #natureSettingsToggle.on{ border-color:var(--accent); color:var(--accent); }
+
   .immersive-btn{
     position:fixed; top:18px; right:18px; z-index:60;
   }
@@ -456,7 +478,7 @@
   #envToast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   .penguin-wrap{
-    position:absolute; top:22px; right:26px;
+    position:absolute; top:22px; left:26px;
     display:flex; align-items:flex-start; gap:8px;
     z-index:2; pointer-events:none;
   }
@@ -465,7 +487,7 @@
     border:1px solid var(--paper-border);
     color:var(--ink);
     padding:6px 16px 8px;
-    border-radius:16px 16px 4px 16px;
+    border-radius:16px 16px 16px 4px;
     font-family:'Caveat', cursive; font-weight:600;
     font-size:1.15rem;
     white-space:nowrap;
@@ -564,7 +586,7 @@
     .panel-close{ top:16px; right:16px; font-size:1rem; }
     .side-panel h3{ font-size:1.2rem; }
     .side-panel .sub{ font-size:.8rem; }
-    .penguin-wrap{ top:16px; right:16px; gap:6px; }
+    .penguin-wrap{ top:16px; left:16px; gap:6px; }
     .penguin{ font-size:1.8rem; }
     .penguin-bubble{ font-size:1rem; padding:5px 12px 6px; }
   }
@@ -579,15 +601,14 @@
     .corner h2{ margin-bottom:14px; }
     .notebook, .ttt-board{ max-width:220px; }
     .side-panel{ padding:14px 16px; overflow-y:auto; }
-    .penguin-wrap{ top:8px; right:12px; }
+    .penguin-wrap{ top:8px; left:12px; }
     .penguin{ font-size:1.4rem; }
     .penguin-bubble{ font-size:.85rem; padding:3px 10px 4px; }
     .env-toolbar{ top:8px; }
   }
 
   @media (prefers-reduced-motion: reduce){
-    .blob, .origami, .wing, .bird-wing, .penguin, .penguin-bubble, .type-cursor, .env-eq span{ animation:none !important; }
-    .petal{ display:none; }
+    .blob, .penguin, .penguin-bubble, .type-cursor, .env-eq span{ animation:none !important; }
   }
 </style>
 </head>
@@ -597,28 +618,48 @@
 <div id="envToast"></div>
 
 <!-- LAYERS 1–11: sky + atmosphere + celestial bodies + clouds + birds(bg) + horizon + ocean + waves + reflections + mist -->
-<canvas id="envCanvas"></canvas>
+<canvas id="envCanvas" aria-hidden="true"></canvas>
 <div id="envVeil"></div>
+<div id="vignette"></div>
+<div id="seaDriftLayer"></div>
 
-<!-- Layer: environment toolbar (nature sounds + capture) -->
+<!-- Layer: environment toolbar (ambient sound play/pause + settings + capture) -->
 <div class="env-toolbar" id="envToolbar">
-  <button class="env-btn" id="natureSoundToggle" title="Ambient ocean &amp; wind sound">
-    <span>🌊</span><span id="natureSoundLabel">Ocean &amp; Wind</span>
+  <button class="env-btn" id="natureSoundToggle" title="Play ambient ocean &amp; wind sound" aria-label="Play ambient ocean and wind sound">
+    <span id="natureSoundIcon">▶</span><span id="natureSoundLabel">Play sound</span>
     <span class="env-eq"><span></span><span></span><span></span></span>
   </button>
-  <button class="env-btn" id="captureBtn" title="Capture this moment">📸 Capture</button>
+  <button class="env-btn" id="natureSettingsToggle" title="Sound settings" aria-label="Open sound settings">⚙️ Settings</button>
+  <div class="env-btn wind-compass" id="windCompass" title="Current wind" aria-label="Current wind indicator">
+    <span class="compass-needle" id="compassNeedle">🧭</span><span id="windLabel">Calm</span>
+  </div>
+  <button class="env-btn" id="captureBtn" title="Capture this moment" aria-label="Capture this moment as an image">📸 Capture</button>
 </div>
-<button class="env-btn immersive-btn" id="immersiveToggle" title="Hide everything but the sky and ocean">🧘 Just the view</button>
+<button class="env-btn immersive-btn" id="immersiveToggle" title="Hide everything but the sky and ocean" aria-label="Toggle immersive view">🧘 Just the view</button>
 <div class="env-panel" id="envPanel">
-  <div class="env-row"><label><input type="checkbox" id="toggleOcean" checked> Ocean</label></div>
-  <div class="env-row"><label><input type="checkbox" id="toggleWind" checked> Wind</label></div>
-  <div class="env-row"><span>Volume</span><input type="range" id="natureVolume" min="0" max="100" value="45"></div>
-  <div class="env-row"><button class="env-btn" id="muteBtn" style="width:100%; justify-content:center;">🔈 Mute</button></div>
+  <div class="env-panel-section">
+    <div class="env-panel-heading">Ambience</div>
+    <div class="env-row"><label><input type="checkbox" id="toggleOcean" checked> Ocean</label></div>
+    <div class="env-row"><label><input type="checkbox" id="toggleWind" checked> Wind</label></div>
+    <div class="env-row"><span>Volume</span><input type="range" id="natureVolume" min="0" max="100" value="45" aria-label="Ambient sound volume"></div>
+    <div class="env-row"><button class="env-btn" id="muteBtn" style="width:100%; justify-content:center;">🔈 Mute</button></div>
+  </div>
+  <div class="env-panel-section">
+    <div class="env-panel-heading">Weather</div>
+    <div class="env-row env-weather-row">
+      <button class="env-btn env-chip" data-weather="clear" aria-label="Clear weather">☀️ Clear</button>
+      <button class="env-btn env-chip" data-weather="cloudy" aria-label="Cloudy weather">☁️ Cloudy</button>
+      <button class="env-btn env-chip" data-weather="rain" aria-label="Rainy weather">🌧️ Rain</button>
+      <button class="env-btn env-chip" data-weather="storm" aria-label="Storm weather">⛈️ Storm</button>
+    </div>
+  </div>
+  <div class="env-panel-section">
+    <div class="env-panel-heading">More</div>
+    <button class="env-btn env-panel-link" id="gotoMusicBtn" style="width:100%; justify-content:center;">🎵 Something to listen to</button>
+  </div>
 </div>
 
 <div class="panel-overlay" id="panelOverlay"></div>
-<div id="origamiSky"></div>
-<div id="petalLayer"></div>
 <div class="blob b1"></div>
 <div class="blob b2"></div>
 <div class="blob b3"></div>
@@ -626,7 +667,7 @@
 <!-- TIC TAC TOE PANEL -->
 <div class="side-panel" id="ticpanel">
   <button class="panel-back" data-back>← back</button>
-  <button class="panel-close" data-close="ticpanel">✕</button>
+  <button class="panel-close" data-close="ticpanel" aria-label="Close tic tac toe panel">✕</button>
   <h3>Tic Tac Toe</h3>
   <p class="sub">You're X. I'm O. Let's see how it goes.</p>
   <div class="ttt-board" id="tttBoard"></div>
@@ -637,7 +678,7 @@
 <!-- NOTEBOOK PANEL -->
 <div class="side-panel" id="ventpanel">
   <button class="panel-back" data-back>← back</button>
-  <button class="panel-close" data-close="ventpanel">✕</button>
+  <button class="panel-close" data-close="ventpanel" aria-label="Close notebook panel">✕</button>
   <h3>A Little Notebook</h3>
   <p class="sub">It turns its own pages. Just watch.</p>
   <div class="notebook">
@@ -646,15 +687,15 @@
   </div>
 </div>
 
-<button class="panel-toggle" id="ticToggle" title="Play Tic Tac Toe">⭕</button>
-<button class="panel-toggle" id="ventToggle" title="Notebook">📖</button>
+<button class="panel-toggle" id="ticToggle" title="Play Tic Tac Toe" aria-label="Open tic tac toe">⭕</button>
+<button class="panel-toggle" id="ventToggle" title="Notebook" aria-label="Open notebook">📖</button>
 <div class="stage">
 
   <!-- HOME / MENU -->
   <div class="screen active" id="home">
     <div class="penguin-wrap" aria-hidden="true">
-      <div class="penguin-bubble">hii Arpi!</div>
       <span class="penguin">🐧</span>
+      <div class="penguin-bubble">hii Arpi!</div>
     </div>
     <div class="greet"><span id="greetText"></span><span class="type-cursor">|</span></div>
     <p class="prompt">This little page is yours. Pick something below.</p>
@@ -697,9 +738,9 @@
     <div class="song-list">
       <a class="song" href="https://www.youtube.com/watch?v=xEeFrLSkMm8" target="_blank" rel="noopener"><span><span class="title">Spring Day</span><br><span class="mood">soft, wistful</span></span><span class="play-icon">▶</span></a>
       <a class="song" href="https://www.youtube.com/watch?v=VTRGOBT6p80" target="_blank" rel="noopener"><span><span class="title">Magic Shop</span><br><span class="mood">gentle, reassuring</span></span><span class="play-icon">▶</span></a>
-      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Epiphany+official" target="_blank" rel="noopener"><span><span class="title">Epiphany</span><br><span class="mood">slow piano ballad</span></span><span class="play-icon">▶</span></a>
-      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Serendipity+official" target="_blank" rel="noopener"><span><span class="title">Serendipity</span><br><span class="mood">dreamy, light</span></span><span class="play-icon">▶</span></a>
-      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Blue+and+Grey+official" target="_blank" rel="noopener"><span><span class="title">Blue & Grey</span><br><span class="mood">quiet, melancholic</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/watch?v=fIkZOLsnoqY" target="_blank" rel="noopener"><span><span class="title">Epiphany</span><br><span class="mood">slow piano ballad</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/watch?v=BEMaH9Sm3lQ" target="_blank" rel="noopener"><span><span class="title">Serendipity</span><br><span class="mood">dreamy, light</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/watch?v=iP62Tg04vww" target="_blank" rel="noopener"><span><span class="title">Blue & Grey</span><br><span class="mood">quiet, melancholic</span></span><span class="play-icon">▶</span></a>
     </div>
     <p class="music-note">Tap any song to open it</p>
   </div>
@@ -738,9 +779,16 @@
    notebook, penguin greeting, music toggle, origami decorations). Preserved.
    ========================================================================= */
 
-  // Typewriter greeting
+  // Typewriter greeting — now time-of-day aware
   const greetText = document.getElementById('greetText');
-  const greetFull = 'Hey Arpi 👋';
+  function pickGreeting(){
+    const h = new Date().getHours();
+    if (h >= 5 && h < 11) return 'Good morning, Arpi ☀️';
+    if (h >= 11 && h < 17) return 'Hey Arpi 👋';
+    if (h >= 17 && h < 21) return 'Good evening, Arpi 🌇';
+    return 'Late night thoughts, Arpi? 🌙';
+  }
+  const greetFull = pickGreeting();
   let greetIdx = 0;
   function typeGreet(){
     if(greetIdx <= greetFull.length){
@@ -795,18 +843,28 @@
   document.getElementById('shayriNext').addEventListener('click', () => cycle('shayri', document.getElementById('shayriText')));
   document.getElementById('aboutNext').addEventListener('click', () => cycle('about', document.getElementById('aboutText')));
 
-  // Breathing exercise
+  // Breathing exercise — now auto-stops after 4 rounds, matching the on-screen copy
   const breatheCircle = document.getElementById('breatheCircle');
   const breatheHint = document.getElementById('breatheHint');
   const breatheStart = document.getElementById('breatheStart');
+  const BREATHE_TOTAL_ROUNDS = 4;
   let breatheTimer = null;
   let breatheRunning = false;
+  let breatheRound = 0;
+
+  function resetBreatheUI(){
+    breatheCircle.classList.remove('in', 'out');
+    breatheCircle.textContent = 'breathe';
+    breatheHint.textContent = 'Tap start. Follow the circle — in as it grows, out as it shrinks. Four rounds is usually enough.';
+    breatheStart.textContent = 'Start';
+  }
 
   function runBreatheCycle() {
+    breatheRound++;
     breatheCircle.classList.remove('out');
     breatheCircle.classList.add('in');
     breatheCircle.textContent = 'in...';
-    breatheHint.textContent = 'Breathe in slowly through your nose.';
+    breatheHint.textContent = `Breathe in slowly through your nose. (Round ${breatheRound} of ${BREATHE_TOTAL_ROUNDS})`;
     breatheTimer = setTimeout(() => {
       breatheCircle.textContent = 'hold';
       breatheHint.textContent = 'Hold it for a moment.';
@@ -816,7 +874,15 @@
         breatheCircle.textContent = 'out...';
         breatheHint.textContent = 'Let it go slowly through your mouth.';
         breatheTimer = setTimeout(() => {
-          if (breatheRunning) runBreatheCycle();
+          if (breatheRunning && breatheRound < BREATHE_TOTAL_ROUNDS) {
+            runBreatheCycle();
+          } else if (breatheRunning) {
+            breatheRunning = false;
+            breatheCircle.classList.remove('in', 'out');
+            breatheCircle.textContent = 'breathe';
+            breatheHint.textContent = "That's four rounds — nicely done. Tap start if you'd like to go again.";
+            breatheStart.textContent = 'Start';
+          }
         }, 4000);
       }, 1600);
     }, 4000);
@@ -826,29 +892,35 @@
     if (breatheRunning) {
       breatheRunning = false;
       clearTimeout(breatheTimer);
-      breatheCircle.classList.remove('in', 'out');
-      breatheCircle.textContent = 'breathe';
-      breatheHint.textContent = 'Tap start. Follow the circle — in as it grows, out as it shrinks. Four rounds is usually enough.';
-      breatheStart.textContent = 'Start';
+      resetBreatheUI();
     } else {
       breatheRunning = true;
+      breatheRound = 0;
       breatheStart.textContent = 'Stop';
       runBreatheCycle();
     }
   });
 
   // Navigation
-  function showScreen(id) {
+  const VALID_SCREENS = ['home','krishna','breathe','music','shayri','about','note'];
+  function showScreen(id, opts) {
+    opts = opts || {};
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     if (id !== 'breathe' && breatheRunning) {
       breatheRunning = false;
       clearTimeout(breatheTimer);
-      breatheCircle.classList.remove('in', 'out');
-      breatheCircle.textContent = 'breathe';
-      breatheStart.textContent = 'Start';
+      resetBreatheUI();
     }
     closeAllPanels();
+    // mood-matched water: calmer, cooler tint on the reflective/quiet corners
+    const calmScreens = ['breathe', 'krishna'];
+    document.getElementById('envCanvas').classList.toggle('calm-tint', calmScreens.includes(id));
+    // keep the URL shareable/refreshable — deep-link to whichever corner is open
+    if (!opts.skipHash) {
+      const hash = id === 'home' ? '#' : '#' + id;
+      if (window.location.hash !== hash) history.replaceState(null, '', hash);
+    }
   }
 
   function closeAllPanels() {
@@ -860,6 +932,16 @@
   document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.target)));
   document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click', () => showScreen('home')));
   document.getElementById('surpriseBtn').addEventListener('click', () => surpriseReveal());
+
+  // Land directly on a shared/refreshed corner if the URL has one, otherwise home
+  (function initFromHash(){
+    const id = (window.location.hash || '').replace('#','');
+    if (VALID_SCREENS.includes(id) && id !== 'home') showScreen(id, { skipHash:true });
+  })();
+  window.addEventListener('hashchange', () => {
+    const id = (window.location.hash || '').replace('#','');
+    showScreen(VALID_SCREENS.includes(id) ? id : 'home', { skipHash:true });
+  });
 
   // Tic Tac Toe
   const tttBoard = document.getElementById('tttBoard');
@@ -897,7 +979,11 @@
       const cell = document.createElement('div');
       cell.className = 'ttt-cell' + (val === 'X' ? ' x' : val === 'O' ? ' o' : '');
       cell.textContent = val;
+      cell.setAttribute('role', 'button');
+      cell.setAttribute('tabindex', '0');
+      cell.setAttribute('aria-label', val ? `Cell ${i+1}: ${val}` : `Cell ${i+1}: empty`);
       cell.addEventListener('click', () => tttPlayerMove(i));
+      cell.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tttPlayerMove(i); } });
       tttBoard.appendChild(cell);
     });
   }
@@ -923,7 +1009,7 @@
 
   function tttEnd(result) {
     tttOver = true;
-    tttStatus.textContent = result === 'O' ? "Prathamesh won! 😏" : result === 'X' ? "You won! 🎉" : "It's a draw.";
+    tttStatus.textContent = result === 'O' ? "I won this one! 😏" : result === 'X' ? "You won! 🎉" : "It's a draw.";
   }
 
   tttReset.addEventListener('click', () => {
@@ -992,88 +1078,12 @@
   });
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isMobile = window.matchMedia('(max-width: 768px)').matches;
-
-  // Origami butterflies & birds — now wind-aware and time-of-day-aware (§11, §17)
-  const origamiSky = document.getElementById('origamiSky');
-  const paperTones = [['#cdb8ec', '#8a6fb0'], ['#eccf94', '#d9b872'], ['#a98fd1', '#5b2e91'], ['#f0d9a3', '#c9a25e']];
-
-  function butterflySVG(c1, c2) {
-    return `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><g class="wing left"><polygon points="30,20 4,6 8,20 4,34" fill="${c1}" stroke="${c2}" stroke-width="1"/><polygon points="30,20 10,14 12,20 10,26" fill="${c2}" opacity="0.6"/></g><g class="wing right"><polygon points="30,20 56,6 52,20 56,34" fill="${c1}" stroke="${c2}" stroke-width="1"/><polygon points="30,20 50,14 48,20 50,26" fill="${c2}" opacity="0.6"/></g><rect x="28.5" y="12" width="3" height="16" rx="1.5" fill="${c2}"/></svg>`;
-  }
-  function birdSVG(c1, c2) {
-    return `<svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg"><polygon points="4,26 40,20 30,32" fill="${c1}" stroke="${c2}" stroke-width="1"/><polygon class="bird-wing" points="18,20 38,2 34,20" fill="${c2}" opacity="0.85"/><polygon points="40,20 56,16 46,24" fill="${c1}" stroke="${c2}" stroke-width="1"/></svg>`;
-  }
-
-  function spawnOrigami(kind) {
-    const el = document.createElement('div');
-    el.className = 'origami';
-    el.dataset.kind = kind;
-    const [c1, c2] = paperTones[Math.floor(Math.random() * paperTones.length)];
-    el.innerHTML = kind === 'bird' ? birdSVG(c1, c2) : butterflySVG(c1, c2);
-    const size = kind === 'bird' ? (Math.random() * 22 + 30) : (Math.random() * 18 + 26);
-    el.style.width = size + 'px';
-    el.style.height = (size * 0.66) + 'px';
-    el.style.left = Math.random() * 90 + 'vw';
-    el.style.top = kind === 'bird' ? (Math.random() * 35 + 8) + 'vh' : (Math.random() * 85) + 'vh';
-    const windMul = 0.6 + (window.envWind || 0.4) * 1.2;
-    const dx = (Math.random() * 220 + 120) * windMul * (Math.random() < 0.5 ? -1 : 1);
-    const dy = (Math.random() * 140 + 60) * (Math.random() < 0.5 ? -1 : 1);
-    const rot = (Math.random() * 20 - 10);
-    el.style.setProperty('--dx', dx + 'px');
-    el.style.setProperty('--dy', dy + 'px');
-    el.style.setProperty('--rot', rot + 'deg');
-    el.style.animationDuration = (Math.random() * 14 + 16) / windMul + 's';
-    el.style.animationDelay = (Math.random() * 8) + 's';
-    const wingDur = kind === 'bird' ? (Math.random() * .3 + .5) : (Math.random() * .4 + .7);
-    el.querySelectorAll('.wing, .bird-wing').forEach(w => w.style.animationDuration = wingDur + 's');
-    origamiSky.appendChild(el);
-    // birds fly off-screen and are removed; keep the DOM tidy
-    if (kind === 'bird') {
-      setTimeout(() => el.remove(), (parseFloat(el.style.animationDuration) + parseFloat(el.style.animationDelay || 0)) * 1000 + 500);
-    }
-  }
-
-  const baseButterflies = prefersReducedMotion ? 0 : (isMobile ? 4 : 7);
-  for (let i = 0; i < baseButterflies; i++) spawnOrigami('butterfly');
-
-  // Birds now spawn on a schedule that respects time-of-day (§11) instead of a fixed batch.
-  function maybeSpawnBird() {
-    if (prefersReducedMotion) return;
-    const activity = window.envBirdActivity ?? 0.4; // 0 (night) .. 1 (peak dawn/dusk)
-    if (Math.random() < activity * 0.55) {
-      const group = 1 + Math.floor(Math.random() * (activity > 0.6 ? 3 : 1));
-      for (let i = 0; i < group; i++) setTimeout(() => spawnOrigami('bird'), i * 350);
-    }
-    const nextDelay = 6000 + Math.random() * 9000;
-    setTimeout(maybeSpawnBird, nextDelay);
-  }
-  setTimeout(maybeSpawnBird, 2000);
-
-/* =========================================================================
-   PART B — floating flower petals (§20, mobile/reduced-motion aware)
-   ========================================================================= */
-  const petalLayer = document.getElementById('petalLayer');
-  function spawnPetal() {
-    if (prefersReducedMotion) return;
-    if (document.hidden) return;
-    const p = document.createElement('div');
-    p.className = 'petal';
-    const size = Math.random() * 10 + 6;
-    p.style.width = size + 'px';
-    p.style.height = size * 0.8 + 'px';
-    p.style.left = Math.random() * 100 + 'vw';
-    const windMul = 0.5 + (window.envWind || 0.4) * 1.4;
-    const dx = (Math.random() * 160 + 40) * windMul * (Math.random() < 0.5 ? -1 : 1);
-    const dur = (Math.random() * 6 + 9) / windMul;
-    p.style.setProperty('--pdx', dx + 'px');
-    p.style.setProperty('--prot', (Math.random() * 300 - 150) + 'deg');
-    p.style.animationDuration = dur + 's';
-    petalLayer.appendChild(p);
-    setTimeout(() => p.remove(), dur * 1000 + 200);
-  }
-  let petalIntervalMs = isMobile ? 2600 : 1600;
-  if (!prefersReducedMotion) setInterval(() => spawnPetal(), petalIntervalMs);
+  // Mobile/desktop density switch — kept in sync with the 1180px breakpoint the
+  // side-panel CSS uses, and re-evaluated on resize so rotating a tablet or
+  // resizing a desktop window doesn't leave stale visual density behind.
+  const mobileQuery = window.matchMedia('(max-width: 1180px)');
+  let isMobile = mobileQuery.matches;
+  mobileQuery.addEventListener('change', (e) => { isMobile = e.matches; });
 
 /* =========================================================================
    PART C — "Surprise for you" reveal, now an immersive environment dip (§33)
@@ -1083,12 +1093,13 @@
     document.body.style.transition = 'filter 1.1s ease';
     document.body.style.filter = 'brightness(0.82) saturate(1.08)';
     if (window.envEngine) window.envEngine.setTimeScale(0.35);
-    for (let i = 0; i < 5; i++) setTimeout(spawnPetal, i * 180);
+    document.getElementById('vignette').classList.add('strong');
     showToast('✨ a little surprise for you');
     setTimeout(() => {
       showScreen(options[Math.floor(Math.random() * options.length)]);
       setTimeout(() => {
         document.body.style.filter = '';
+        document.getElementById('vignette').classList.remove('strong');
         if (window.envEngine) window.envEngine.setTimeScale(1);
       }, 2600);
     }, 550);
@@ -1108,18 +1119,30 @@
    particle swarm — §27).
    ========================================================================= */
 
-  const DEBUG_SKY = false; // flip true + use window.setDebugTime()/setWeather() from devtools
+  // Debug hooks are opt-in only (add ?debug=1 to the URL) so they never
+  // ship "live" for a normal visitor, while staying available for testing.
+  const DEBUG_SKY = new URLSearchParams(window.location.search).get('debug') === '1';
   let debugMinutes = null; // e.g. 5*60+30 for 05:30, set via setDebugTime()
-  window.setDebugTime = function(hhmm){
-    const [h,m] = hhmm.split(':').map(Number);
-    debugMinutes = h*60 + (m||0);
-    showToast('debug time set → ' + hhmm);
-  };
-  window.setWeather = function(w){
-    if (!['clear','cloudy','rain'].includes(w)) return;
-    window.envEngine && (window.envEngine.weather = w);
-    showToast('weather → ' + w);
-  };
+  if (DEBUG_SKY) {
+    window.setDebugTime = function(hhmm){
+      const [h,m] = hhmm.split(':').map(Number);
+      debugMinutes = h*60 + (m||0);
+      showToast('debug time set → ' + hhmm);
+    };
+    window.setWeather = function(w){
+      if (!['clear','cloudy','rain','storm'].includes(w)) return;
+      window.envEngine && (window.envEngine.weather = w);
+      showToast('weather → ' + w);
+    };
+    console.info('[arpi-page] debug mode on — window.setDebugTime("HH:MM") / window.setWeather("clear|cloudy|rain|storm")');
+  } else {
+    // still expose setWeather for the in-page weather chips (non-debug, safe)
+    window.setWeather = function(w){
+      if (!['clear','cloudy','rain','storm'].includes(w)) return;
+      window.envEngine && (window.envEngine.weather = w);
+      showToast('weather → ' + w);
+    };
+  }
 
   // ---- colour + math helpers ----
   function hexToRgb(hex){
@@ -1186,9 +1209,24 @@
       this.reduced = prefersReducedMotion;
       this.lastFrame = 0;
       this.simMinutesAccum = null;
+      // interactive extras
+      this.shootingStars = [];
+      this.ripples = [];
+      this.parallax = {x:0,y:0};
+      this.parallaxTarget = {x:0,y:0};
+      this.previewMinutes = null;   // set while dragging/settling the sun or moon
+      this._dragTarget = null;
+      this._dragMoved = false;
+      this.lightningAlpha = 0;
+      this._nextLightning = 0;
+      this._chimeDay = null;
+      this._chimed = { sunrise:false, sunset:false };
+      this.SUNRISE_H = 5.6; this.SUNSET_H = 19.0;
+      this.MOONRISE_H = 19.0; this.MOONSET_H = 5.6 + 24;
       this._resize();
       this._buildStars();
       this._buildClouds();
+      this._bindPointer();
       window.addEventListener('resize', () => this._resize());
       this.state = sampleKeyframes(12);
       this._loop = this._loop.bind(this);
@@ -1212,6 +1250,111 @@
         phase: Math.random()*Math.PI*2,
         speed: Math.random()*0.6+0.4
       }));
+      // a handful of stars quietly connected into a constellation
+      this.constellationIdx = [];
+      if (this.stars.length >= 6 && !this.reduced){
+        const picked = new Set();
+        while (picked.size < 5) picked.add(Math.floor(Math.random()*this.stars.length));
+        this.constellationIdx = [...picked];
+      }
+    }
+    _spawnShootingStar(){
+      const startX = this.w*0.15 + Math.random()*this.w*0.7;
+      const startY = Math.random()*this.horizonY*0.35;
+      const angle = Math.PI*0.2 + Math.random()*0.18;
+      const speed = (isMobile?420:600) + Math.random()*220;
+      this.shootingStars.push({
+        x:startX, y:startY,
+        vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+        life:0, maxLife:0.5+Math.random()*0.3
+      });
+    }
+    _bindPointer(){
+      const canvas = this.canvas;
+      const sunFacts = [
+        "The sun's light takes about 8 minutes to reach us.",
+        'A sunset is really just the horizon getting in the way.',
+        'The sun is a star — an ordinary one, which is sort of extraordinary.',
+        'Golden hour gets its warmth from sunlight crossing more atmosphere.',
+        'Every sunrise means the earth quietly turned toward the light again.',
+        "The sun's been rising for 4.6 billion years. It's not stopping now."
+      ];
+      const moonFacts = [
+        "Moonlight is just borrowed sunlight, reflected back to us.",
+        'The moon drifts a little farther from earth every year.',
+        'The same side of the moon always faces us. It never turns away.',
+        'That shimmering path on the water is called a moon path.',
+        'The moon has no light of its own — just a talent for holding onto someone else\'s.',
+        'Every full moon has a name. This one is no exception.'
+      ];
+      const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+      const dist2 = (x1,y1,x2,y2) => (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2);
+      const timeFromFraction = (target, fraction) => {
+        const f = clamp(fraction,0,1);
+        if (target === 'sun'){
+          const hrs = this.SUNRISE_H + f*(this.SUNSET_H - this.SUNRISE_H);
+          return ((hrs%24)+24)%24 * 60;
+        }
+        const hrs = this.MOONRISE_H + f*(this.MOONSET_H - this.MOONRISE_H);
+        return ((hrs%24)+24)%24 * 60;
+      };
+
+      canvas.addEventListener('pointerdown', (e) => {
+        const x = e.clientX, y = e.clientY;
+        let target = null;
+        if (this._sunScreen && dist2(x,y,this._sunScreen.x,this._sunScreen.y) < Math.pow((this._sunScreen.r||38)+24,2)) target = 'sun';
+        else if (this._moonScreen && dist2(x,y,this._moonScreen.x,this._moonScreen.y) < Math.pow((this._moonScreen.r||22)+24,2)) target = 'moon';
+        if (target){
+          this._dragTarget = target;
+          this._dragMoved = false;
+          this._dragStartXY = {x,y};
+          try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+        }
+      });
+
+      canvas.addEventListener('pointermove', (e) => {
+        const x = e.clientX, y = e.clientY;
+        if (!isMobile){
+          this.parallaxTarget.x = (x/this.w - 0.5) * 2;
+          this.parallaxTarget.y = (y/this.h - 0.5) * 2;
+        }
+        if (this._dragTarget){
+          const dx = x-this._dragStartXY.x, dy = y-this._dragStartXY.y;
+          if (!this._dragMoved && (dx*dx+dy*dy) > 36) this._dragMoved = true;
+          if (this._dragMoved) this.previewMinutes = timeFromFraction(this._dragTarget, x/this.w);
+          return;
+        }
+        if (!this.reduced && y > this.horizonY + 6){
+          const now = this.time || 0;
+          if (!this._lastRipple || now - this._lastRipple > 0.09){
+            this._lastRipple = now;
+            this.ripples.push({x,y,age:0,maxAge:1.1});
+            if (this.ripples.length > 40) this.ripples.shift();
+          }
+        }
+      });
+
+      const endDrag = () => {
+        if (!this._dragTarget) return;
+        if (this._dragMoved){
+          showToast('previewing ' + (this._dragTarget==='sun' ? "the sun's path" : 'moonrise') + ' — drifting back to now…');
+        } else {
+          showToast(pick(this._dragTarget === 'sun' ? sunFacts : moonFacts));
+          this.previewMinutes = null;
+        }
+        this._dragTarget = null;
+        this._dragMoved = false;
+      };
+      canvas.addEventListener('pointerup', endDrag);
+      canvas.addEventListener('pointercancel', endDrag);
+
+      if (isMobile && window.DeviceOrientationEvent){
+        window.addEventListener('deviceorientation', (e) => {
+          if (e.gamma == null || e.beta == null) return;
+          this.parallaxTarget.x = clamp(e.gamma/30, -1, 1);
+          this.parallaxTarget.y = clamp((e.beta-45)/30, -1, 1);
+        });
+      }
     }
     _buildClouds(){
       const layers = [
@@ -1235,6 +1378,7 @@
     }
     getMinutes(){
       if (DEBUG_SKY && debugMinutes !== null) return debugMinutes;
+      if (this.previewMinutes !== null) return this.previewMinutes;
       const d = new Date();
       return d.getHours()*60 + d.getMinutes() + d.getSeconds()/60;
     }
@@ -1250,6 +1394,17 @@
       this._draw();
     }
     _update(dt){
+      // gently drift a sun/moon time-preview back to the real time once released
+      if (this.previewMinutes !== null && !this._dragTarget){
+        const now = new Date();
+        const real = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
+        let diff = real - this.previewMinutes;
+        if (diff > 720) diff -= 1440;
+        if (diff < -720) diff += 1440;
+        if (Math.abs(diff) < 1.2) this.previewMinutes = null;
+        else this.previewMinutes = ((this.previewMinutes + diff*0.012) + 1440) % 1440;
+      }
+
       const minutes = this.getMinutes();
       const t = (minutes/60) % 24;
       this.hour = t;
@@ -1257,31 +1412,28 @@
 
       // wind: slow drifting target with gentle easing (§17)
       if (!this._windCheckboxOn || this._windCheckboxOn.checked) {
-        this.windTarget = 0.35 + 0.3*Math.sin(this.time*0.05) + (this.weather==='rain'?0.35:0) + (this.weather==='cloudy'?0.1:0);
+        this.windTarget = 0.35 + 0.3*Math.sin(this.time*0.05) + (this.weather==='rain'?0.35:0) + (this.weather==='storm'?0.55:0) + (this.weather==='cloudy'?0.1:0);
       } else {
         this.windTarget = 0.05;
       }
       this.wind += (this.windTarget - this.wind) * 0.01;
       window.envWind = this.wind;
 
+      // camera-depth parallax easing (mouse / tilt driven)
+      this.parallax.x += (this.parallaxTarget.x - this.parallax.x) * 0.04;
+      this.parallax.y += (this.parallaxTarget.y - this.parallax.y) * 0.04;
+
       // sun / moon elevation + position (§7,§8)
-      const sunriseT = 5.6, sunsetT = 19.0;
-      const dayFrac = clamp((t - sunriseT)/(sunsetT - sunriseT), -0.15, 1.15);
+      const dayFrac = clamp((t - this.SUNRISE_H)/(this.SUNSET_H - this.SUNRISE_H), -0.15, 1.15);
       this.sunElevation = Math.sin(Math.PI * clamp(dayFrac,0,1)) * (dayFrac>=0 && dayFrac<=1 ? 1 : 0);
       this.sunX = clamp(dayFrac,0,1);
       this.sunVisible = dayFrac >= -0.02 && dayFrac <= 1.02;
 
-      let tm = t < sunsetT ? t + 24 : t; // continuous across midnight, moon opposite phase
-      const moonriseT = 19.0, moonsetT = 5.6+24;
-      const moonFrac = clamp((tm - moonriseT)/(moonsetT - moonriseT), -0.15, 1.15);
+      let tm = t < this.SUNSET_H ? t + 24 : t; // continuous across midnight, moon opposite phase
+      const moonFrac = clamp((tm - this.MOONRISE_H)/(this.MOONSET_H - this.MOONRISE_H), -0.15, 1.15);
       this.moonElevation = Math.sin(Math.PI * clamp(moonFrac,0,1)) * (moonFrac>=0 && moonFrac<=1 ? 1 : 0);
       this.moonX = clamp(moonFrac,0,1);
       this.moonVisible = moonFrac >= -0.02 && moonFrac <= 1.02;
-
-      // bird activity peaks around dawn / dusk, silent at night (§11)
-      const dawnPeak = Math.exp(-Math.pow(t-7,2)/6);
-      const duskPeak = Math.exp(-Math.pow(t-18,2)/6);
-      window.envBirdActivity = this._birdsOn === false ? 0 : clamp(Math.max(dawnPeak,duskPeak)*0.9 + (t>7&&t<18?0.15:0), 0, 1);
 
       // adaptive UI (§23)
       this._applyUI(this.state.ui);
@@ -1292,6 +1444,38 @@
           if (c.x > 1.25) c.x = -0.25;
         });
       }
+
+      // shooting stars — rare, only on a clear-ish night sky
+      if (!this.reduced && this.state.stars > 0.4){
+        if (this.time > (this._nextShootingStar||0)){
+          this._spawnShootingStar();
+          this._nextShootingStar = this.time + 7 + Math.random()*15;
+        }
+      }
+      this.shootingStars = this.shootingStars.filter(s => {
+        s.life += dt; s.x += s.vx*dt; s.y += s.vy*dt;
+        return s.life < s.maxLife;
+      });
+      this.ripples = this.ripples.filter(r => { r.age += dt; return r.age < r.maxAge; });
+
+      // storm lightning + thunder
+      if (this.weather === 'storm' && !this.reduced){
+        if (!this._nextLightning) this._nextLightning = this.time + 3;
+        if (this.time > this._nextLightning){
+          this.lightningAlpha = 1;
+          this._nextLightning = this.time + 5 + Math.random()*9;
+          NatureSound.thunder();
+        }
+      } else {
+        this._nextLightning = 0;
+      }
+      this.lightningAlpha = Math.max(0, this.lightningAlpha - dt*1.6);
+
+      // once-a-day soft chime as the sky crosses into sunrise / sunset
+      const dayKey = new Date().toDateString();
+      if (this._chimeDay !== dayKey){ this._chimeDay = dayKey; this._chimed = {sunrise:false, sunset:false}; }
+      if (!this._chimed.sunrise && t >= this.SUNRISE_H && t < this.SUNRISE_H+0.2){ this._chimed.sunrise = true; NatureSound.chime(); }
+      if (!this._chimed.sunset && t >= 18.3 && t < 18.5){ this._chimed.sunset = true; NatureSound.chime(); }
     }
     _applyUI(mode){
       if (this._uiMode === mode) return;
@@ -1324,6 +1508,10 @@
       const ctx = this.ctx, w = this.w, h = this.h, hz = this.horizonY;
       const st = this.state;
 
+      // depth parallax — the whole scene shifts a few px with mouse/tilt (§ "visual polish")
+      ctx.save();
+      ctx.translate(this.parallax.x * 9, this.parallax.y * 6);
+
       // Layer 1+2: sky gradient + haze
       const skyGrad = ctx.createLinearGradient(0,0,0,hz);
       skyGrad.addColorStop(0, rgbToCss(st.skyTop));
@@ -1346,6 +1534,50 @@
           ctx.beginPath();
           ctx.arc(s.x*w, s.y*hz, s.r, 0, Math.PI*2);
           ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      // constellation — a few stars quietly joined into a soft outline
+      if (st.stars > 0.5 && this.constellationIdx.length > 1){
+        ctx.save();
+        ctx.globalAlpha = clamp((st.stars-0.5)*1.6, 0, 1) * 0.35;
+        ctx.strokeStyle = '#eee6ff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        this.constellationIdx.forEach((idx, i) => {
+          const s = this.stars[idx];
+          const x = s.x*w, y = s.y*hz;
+          if (i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        });
+        ctx.stroke();
+        // slightly brighter points at each joint
+        ctx.globalAlpha = clamp((st.stars-0.5)*1.6, 0, 1) * 0.7;
+        ctx.fillStyle = '#fff8e6';
+        this.constellationIdx.forEach(idx => {
+          const s = this.stars[idx];
+          ctx.beginPath();
+          ctx.arc(s.x*w, s.y*hz, s.r+0.8, 0, Math.PI*2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      // shooting stars — rare streaks with a soft fading tail
+      if (this.shootingStars.length){
+        ctx.save();
+        this.shootingStars.forEach(s => {
+          const fade = 1 - s.life/s.maxLife;
+          const tailX = s.x - s.vx*0.06, tailY = s.y - s.vy*0.06;
+          const grad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
+          grad.addColorStop(0, `rgba(255,255,255,${fade})`);
+          grad.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(tailX, tailY);
+          ctx.stroke();
         });
         ctx.restore();
       }
@@ -1522,6 +1754,50 @@
           ctx.stroke();
         }
       }
+
+      // bioluminescent sparkle in the wave crests — only glows at night
+      const bioStrength = clamp(st.stars - 0.35, 0, 1);
+      if (bioStrength > 0.02 && !this.reduced){
+        ctx.save();
+        for (let i=0;i<(isMobile?14:26);i++){
+          const bx = ((i*137 + this.time*30) % w);
+          const crestY = hz + oceanH*0.6 + Math.sin(bx*0.017 + this.time*0.65) * 11 * windAmp;
+          const by = crestY + ((i*53) % 40) - 6;
+          const tw = 0.35 + 0.65*Math.max(0, Math.sin(this.time*1.6 + i*2.1));
+          ctx.globalAlpha = bioStrength * tw * 0.6;
+          ctx.fillStyle = '#7dfdd0';
+          ctx.beginPath();
+          ctx.arc(bx, by, 1.3, 0, Math.PI*2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // storm lightning flash — brief bright wash over the whole scene
+      if (this.lightningAlpha > 0.01){
+        ctx.save();
+        ctx.globalAlpha = this.lightningAlpha * 0.85;
+        ctx.fillStyle = '#eef2ff';
+        ctx.fillRect(-40, -40, w+80, h+80);
+        ctx.restore();
+      }
+
+      // cursor ripple — a faint glimmer trail following the pointer over the water
+      if (this.ripples.length){
+        ctx.save();
+        this.ripples.forEach(r => {
+          const f = r.age / r.maxAge;
+          ctx.globalAlpha = (1-f) * 0.28;
+          ctx.strokeStyle = '#eef3ff';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(r.x, r.y, 3 + f*22, 0, Math.PI*2);
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+
+      ctx.restore(); // matches the parallax save() at the top of _draw
     }
   }
 
@@ -1583,7 +1859,7 @@
         const target = 0.22 + Math.random()*0.18;
         const dur = 3.5 + Math.random()*3;
         this.oceanGain.gain.cancelScheduledValues(this.ctx.currentTime);
-        this.oceanGain.gain.linearRampToValueAtTime(this.running && !this.muted ? target : 0, this.ctx.currentTime + dur);
+        this.oceanGain.gain.linearRampToValueAtTime(this.running && !this.muted && (this._oceanOn !== false) ? target : 0, this.ctx.currentTime + dur);
         this.oceanFilter.frequency.linearRampToValueAtTime(700 + Math.random()*500, this.ctx.currentTime + dur);
         this._swellTimer = setTimeout(step, dur*1000);
       };
@@ -1623,6 +1899,45 @@
       this.running = true;
     },
     stop(){ this.running = false; },
+    chime(){
+      // a soft, single bell-like tone for sunrise/sunset transitions
+      this.ensureContext();
+      if (!this.ctx || this.muted) return;
+      const now = this.ctx.currentTime;
+      const freqs = [660, 990, 1320];
+      freqs.forEach((f, i) => {
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        g.gain.value = 0;
+        osc.connect(g); g.connect(this.master);
+        const start = now + i*0.05;
+        g.gain.setValueAtTime(0, start);
+        g.gain.linearRampToValueAtTime(0.05/(i+1), start+0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, start+2.4);
+        osc.start(start);
+        osc.stop(start+2.5);
+      });
+    },
+    thunder(){
+      // a low rumble for storm lightning flashes
+      this.ensureContext();
+      if (!this.ctx || this.muted) return;
+      const now = this.ctx.currentTime;
+      const src = this.ctx.createBufferSource();
+      src.buffer = this._noiseBuffer(2.5);
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 140;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.5, now+0.15);
+      g.gain.exponentialRampToValueAtTime(0.0001, now+2.3);
+      src.connect(filter); filter.connect(g); g.connect(this.master);
+      src.start(now);
+      src.stop(now+2.5);
+    },
     setMuted(m){
       this.muted = m;
       if (this.master) this.master.gain.setTargetAtTime(m?0:0.45, this.ctx?.currentTime||0, 0.3);
@@ -1630,28 +1945,149 @@
     setVolume(v){ if (this.master) this.master.gain.setTargetAtTime(v, this.ctx?.currentTime||0, 0.2); }
   };
 
+  // ---- persisted preferences (real deployed page: localStorage is safe here) ----
+  const PREF_KEY = 'arpi-page-prefs-v1';
+  function loadPrefs(){
+    try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function savePrefs(patch){
+    try {
+      const cur = loadPrefs();
+      localStorage.setItem(PREF_KEY, JSON.stringify(Object.assign(cur, patch)));
+    } catch(e){ /* storage unavailable — fail silently, nothing critical depends on it */ }
+  }
+  const prefs = loadPrefs();
+
   const natureBtn = document.getElementById('natureSoundToggle');
+  const natureIcon = document.getElementById('natureSoundIcon');
   const natureLabel = document.getElementById('natureSoundLabel');
+  const natureSettingsBtn = document.getElementById('natureSettingsToggle');
   const envPanel = document.getElementById('envPanel');
+
+  // Button 1: Play / Pause — only starts or stops the ambient audio.
+  // Sound itself never auto-plays (browser autoplay rules + good manners) —
+  // only the on/off *preference* is restored, requiring one tap to resume audio.
   let natureOn = false;
-  natureBtn.addEventListener('click', () => {
-    natureOn = !natureOn;
+  function setNatureOn(on){
+    natureOn = on;
     natureBtn.classList.toggle('on', natureOn);
-    natureLabel.textContent = natureOn ? 'Ocean & Wind On' : 'Ocean & Wind';
-    if (natureOn) { NatureSound.start(); envPanel.classList.add('open'); }
-    else { NatureSound.stop(); envPanel.classList.remove('open'); }
+    natureIcon.textContent = natureOn ? '⏸' : '▶';
+    natureLabel.textContent = natureOn ? 'Pause sound' : 'Play sound';
+    if (natureOn) NatureSound.start(); else NatureSound.stop();
+  }
+  natureBtn.addEventListener('click', () => { setNatureOn(!natureOn); savePrefs({ soundOn: natureOn }); });
+
+  // Button 2: Settings — only opens/closes the panel. Playback keeps
+  // running (or stays paused) no matter what the panel is doing, and it
+  // won't close itself just because you clicked elsewhere.
+  natureSettingsBtn.addEventListener('click', () => {
+    const open = envPanel.classList.toggle('open');
+    natureSettingsBtn.classList.toggle('on', open);
   });
 
-  document.getElementById('toggleOcean').addEventListener('change', (e) => {
-    NatureSound.oceanGain && (NatureSound.oceanGain.gain.value = e.target.checked ? NatureSound.oceanGain.gain.value : 0);
-    NatureSound._oceanOn = e.target.checked;
-  });
-  document.getElementById('toggleWind').addEventListener('change', (e) => { NatureSound._windOn = e.target.checked; });
-  document.getElementById('natureVolume').addEventListener('input', (e) => NatureSound.setVolume(e.target.value/100*0.6));
-  document.getElementById('muteBtn').addEventListener('click', (e) => {
+  const toggleOceanEl = document.getElementById('toggleOcean');
+  const toggleWindEl = document.getElementById('toggleWind');
+  const volumeEl = document.getElementById('natureVolume');
+  const muteBtnEl = document.getElementById('muteBtn');
+
+  if (typeof prefs.oceanOn === 'boolean') toggleOceanEl.checked = prefs.oceanOn;
+  if (typeof prefs.windOn === 'boolean') toggleWindEl.checked = prefs.windOn;
+  if (typeof prefs.volume === 'number') volumeEl.value = prefs.volume;
+  NatureSound._oceanOn = toggleOceanEl.checked;
+  NatureSound._windOn = toggleWindEl.checked;
+  if (prefs.muted){ NatureSound.setMuted(true); muteBtnEl.textContent = '🔇 Unmute'; }
+  if (typeof prefs.weather === 'string') window.envEngine.weather = prefs.weather;
+
+  toggleOceanEl.addEventListener('change', (e) => { NatureSound._oceanOn = e.target.checked; savePrefs({ oceanOn: e.target.checked }); });
+  toggleWindEl.addEventListener('change', (e) => { NatureSound._windOn = e.target.checked; savePrefs({ windOn: e.target.checked }); });
+  volumeEl.addEventListener('input', (e) => { NatureSound.setVolume(e.target.value/100*0.6); savePrefs({ volume: Number(e.target.value) }); });
+  muteBtnEl.addEventListener('click', (e) => {
     NatureSound.setMuted(!NatureSound.muted);
     e.target.textContent = NatureSound.muted ? '🔇 Unmute' : '🔈 Mute';
+    savePrefs({ muted: NatureSound.muted });
   });
+
+  // Weather chips (§14/§26 debug-friendly weather switch) — cosmetic on
+  // the sky/ocean canvas; independent of the ambient sound layers above.
+  const weatherChips = document.querySelectorAll('.env-chip[data-weather]');
+  weatherChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      weatherChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      window.setWeather(chip.dataset.weather);
+      savePrefs({ weather: chip.dataset.weather });
+    });
+  });
+  const restoredWeather = typeof prefs.weather === 'string' ? prefs.weather : 'clear';
+  weatherChips.forEach(c => c.classList.toggle('active', c.dataset.weather === restoredWeather));
+
+  // "Something to listen to" shortcut — jumps to the existing song corner.
+  document.getElementById('gotoMusicBtn').addEventListener('click', () => {
+    envPanel.classList.remove('open');
+    natureSettingsBtn.classList.remove('on');
+    showScreen('music');
+  });
+
+/* =========================================================================
+   PART F-1 — wind compass: ties the invisible wind system to something
+   visible in the toolbar (needle direction + strength label).
+   ========================================================================= */
+  const compassNeedle = document.getElementById('compassNeedle');
+  const windLabel = document.getElementById('windLabel');
+  let compassAngle = 0;
+  setInterval(() => {
+    const wind = window.envWind ?? 0.4;
+    // needle nudges back and forth to suggest a shifting breeze, more so as wind picks up
+    compassAngle += (Math.random()-0.5) * wind * 70;
+    compassAngle = clamp(compassAngle, -55, 55);
+    compassNeedle.style.transform = `rotate(${compassAngle}deg)`;
+    windLabel.textContent = wind < 0.25 ? 'Calm' : wind < 0.5 ? 'Light breeze' : wind < 0.75 ? 'Breezy' : 'Windy';
+  }, 1400);
+
+/* =========================================================================
+   PART F-2 — drifting paper boat: floats across the ocean every so often;
+   tap it to reveal a small hidden note, separate from the menu corners.
+   ========================================================================= */
+  const seaDriftLayer = document.getElementById('seaDriftLayer');
+  const driftNotes = [
+    "if this little boat ever reaches you for real — i hope it's carrying good news.",
+    "psst. you found the boat. that's basically a superpower.",
+    "somewhere out there, a note in a bottle just for you. hi, Arpi.",
+    "the ocean's just doing its job. so is this boat. so are you.",
+    "small boats carry small notes. this one just says: you're doing okay."
+  ];
+  function spawnSeaDrift(){
+    if (prefersReducedMotion) return;
+    if (document.hidden) return;
+    const el = document.createElement('div');
+    el.className = 'sea-drift';
+    const isBottle = Math.random() < 0.4;
+    el.textContent = isBottle ? '🍾' : '⛵';
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-label', 'A drifting note — tap to read it');
+    const engine = window.envEngine;
+    const hz = engine ? engine.horizonY : window.innerHeight*0.6;
+    const topPct = hz + (window.innerHeight - hz) * (0.2 + Math.random()*0.55);
+    el.style.top = topPct + 'px';
+    const dur = 22 + Math.random()*14;
+    el.style.animationDuration = dur + 's';
+    const reveal = () => {
+      showToast('💌 ' + driftNotes[Math.floor(Math.random()*driftNotes.length)]);
+      el.remove();
+    };
+    el.addEventListener('click', reveal);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reveal(); } });
+    seaDriftLayer.appendChild(el);
+    setTimeout(() => el.remove(), dur*1000 + 300);
+  }
+  function scheduleSeaDrift(){
+    const delay = 14000 + Math.random()*22000;
+    setTimeout(() => { spawnSeaDrift(); scheduleSeaDrift(); }, delay);
+  }
+  scheduleSeaDrift();
+  setTimeout(spawnSeaDrift, 4000);
 
 /* =========================================================================
    PART F0 — "Just the view": hides every card/panel/toolbar so only the
