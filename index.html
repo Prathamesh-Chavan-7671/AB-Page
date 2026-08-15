@@ -62,29 +62,10 @@
     background:radial-gradient(ellipse at center, transparent 30%, rgba(4,4,12,.72) 100%);
   }
 
-  /* drifting paper boat / bottle with a hidden note (§ "little interactive treats") */
-  #seaDriftLayer{ position:fixed; inset:0; z-index:8; pointer-events:none; overflow:hidden; }
-  .sea-drift{
-    position:absolute; font-size:1.6rem; pointer-events:auto; cursor:pointer;
-    filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));
-    animation-name:driftAcross; animation-timing-function:linear; animation-iteration-count:1;
-    transition:transform .2s ease;
-  }
-  .sea-drift:hover{ transform:scale(1.15); }
-  @keyframes driftAcross{
-    0%{ transform:translateX(-8vw) translateY(0) rotate(-4deg); }
-    50%{ transform:translateX(50vw) translateY(-6px) rotate(3deg); }
-    100%{ transform:translateX(108vw) translateY(0) rotate(-3deg); }
-  }
-
   /* wind compass pill */
   .wind-compass{ cursor:default; }
   .compass-needle{
     display:inline-block; transition:transform .4s ease;
-  }
-
-  @media (prefers-reduced-motion: reduce){
-    .sea-drift{ animation:none !important; display:none; }
   }
 
   .blob{
@@ -259,18 +240,6 @@
 
   ::selection{ background:var(--lav-mid); color:#fff; }
 
-  /* Visible keyboard focus — default outlines get lost against the dark
-     gradient background, so give every interactive element a clear ring. */
-  a:focus-visible,
-  button:focus-visible,
-  input:focus-visible,
-  [tabindex]:focus-visible{
-    outline:2px solid var(--accent);
-    outline-offset:3px;
-    border-radius:6px;
-  }
-  .ttt-cell:focus-visible{ outline-offset:-2px; }
-
   .side-panel{
     position:fixed; top:50%; transform:translateY(-50%);
     width:230px; z-index:5;
@@ -392,6 +361,7 @@
   }
 
   /* ============ Environment toolbar (nature sounds + capture) ============ */
+  #envHeaderWrap{ display:contents; }
   .env-toolbar{
     position:fixed; top:18px; left:50%; transform:translateX(-50%);
     z-index:50; display:flex; gap:10px; align-items:center;
@@ -414,28 +384,38 @@
   .env-btn:not(.on) .env-eq span{ animation-play-state:paused; height:3px; }
   @keyframes eqBounce{ 0%,100%{ transform:scaleY(.4); } 50%{ transform:scaleY(1); } }
 
+  /* mobile-only "more" kebab — replaces Settings / wind compass / Capture pills */
+  #moreToggle{ display:none; }
+
   .env-panel{
     position:fixed; top:64px; left:50%; transform:translateX(-50%) translateY(-8px);
-    z-index:50; background:rgba(20,16,36,.6); backdrop-filter:blur(14px);
-    border:1px solid var(--paper-border); border-radius:16px; padding:14px 18px;
+    z-index:50; background:rgba(20,16,36,.88); backdrop-filter:blur(14px);
+    border:1px solid rgba(238,231,251,.16); border-radius:16px; padding:14px 18px;
     display:none; flex-direction:column; gap:10px; min-width:210px;
     opacity:0; transition:opacity .25s ease, transform .25s ease;
+    max-height:70vh; overflow-y:auto;
+    /* the panel's backdrop is always dark, so its text uses fixed light
+       colors — not the day/night-adaptive --ink vars, which turn dark
+       navy at midday and disappear against this card */
+    color:#efe7fb;
   }
   .env-panel.open{ display:flex; opacity:1; transform:translateX(-50%) translateY(0); }
-  .env-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.78rem; color:var(--ink-soft); }
+  .env-panel .env-btn{ color:#efe7fb; border-color:rgba(238,231,251,.18); background:rgba(255,255,255,.07); }
+  .env-panel .env-btn:hover{ background:rgba(255,255,255,.14); }
+  .env-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.78rem; color:#cdb8ec; }
   .env-row input[type="range"]{ width:110px; accent-color:var(--accent); }
   .env-row label{ display:flex; align-items:center; gap:6px; }
 
   .env-panel-section + .env-panel-section{
-    margin-top:4px; padding-top:12px; border-top:1px solid var(--paper-border);
+    margin-top:4px; padding-top:12px; border-top:1px solid rgba(238,231,251,.14);
   }
   .env-panel-heading{
     font-size:.66rem; letter-spacing:1.5px; text-transform:uppercase;
-    color:var(--ink-soft); opacity:.8; margin-bottom:8px;
+    color:#cdb8ec; opacity:.9; margin-bottom:8px;
   }
   .env-weather-row{ display:flex; gap:6px; justify-content:space-between; }
   .env-chip{ padding:7px 10px; font-size:.72rem; flex:1; justify-content:center; }
-  .env-chip.active{ border-color:var(--accent); color:var(--accent); background:rgba(255,255,255,.1); }
+  .env-chip.active{ border-color:#eccf94; color:#eccf94; background:rgba(255,255,255,.14); }
   .env-panel-link{ font-size:.78rem; }
   #natureSettingsToggle.on{ border-color:var(--accent); color:var(--accent); }
 
@@ -561,9 +541,22 @@
     .panel-toggle{ width:52px; height:52px; font-size:1.2rem; bottom:16px; }
     #ticToggle{ right:16px; }
     #ventToggle{ left:16px; }
-    .env-toolbar{ top:12px; flex-wrap:wrap; justify-content:center; width:90vw; }
+
+    /* collapsed mobile header: Play/Pause + a single "more" kebab, stacked
+       above "Just the view" instead of five pills wrapping over the content */
+    #envHeaderWrap{
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      position:fixed; top:10px; left:50%; transform:translateX(-50%);
+      width:94vw; z-index:50;
+    }
+    .env-toolbar{ position:static; top:auto; left:auto; transform:none; width:100%; justify-content:center; }
+    .immersive-btn{ position:static; top:auto; right:auto; }
     .env-btn{ font-size:.72rem; padding:8px 12px; }
-    .env-panel{ top:auto; bottom:78px; }
+    #natureSettingsToggle, #windCompass, #captureBtn{ display:none; }
+    #moreToggle{ display:flex; }
+    .env-panel{ top:112px; bottom:auto; }
+
+    .penguin-wrap{ top:104px; }
   }
 
   @media (max-width:480px){
@@ -586,9 +579,13 @@
     .panel-close{ top:16px; right:16px; font-size:1rem; }
     .side-panel h3{ font-size:1.2rem; }
     .side-panel .sub{ font-size:.8rem; }
-    .penguin-wrap{ top:16px; left:16px; gap:6px; }
+    .penguin-wrap{ top:96px; left:16px; gap:6px; }
     .penguin{ font-size:1.8rem; }
     .penguin-bubble{ font-size:1rem; padding:5px 12px 6px; }
+
+    /* icon-only pills at the narrowest widths — the label text is what wraps */
+    #envHeaderWrap .btn-text{ display:none; }
+    .env-btn{ padding:8px 11px; }
   }
 
   @media (max-height:480px) and (orientation:landscape){
@@ -604,7 +601,7 @@
     .penguin-wrap{ top:8px; left:12px; }
     .penguin{ font-size:1.4rem; }
     .penguin-bubble{ font-size:.85rem; padding:3px 10px 4px; }
-    .env-toolbar{ top:8px; }
+    #envHeaderWrap{ top:8px; }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -616,45 +613,51 @@
 
 <div class="capture-flash" id="captureFlash"></div>
 <div id="envToast"></div>
+<audio id="oceanAudio" loop preload="none">
+  <source src="https://ik.imagekit.io/c9crfmeez/the%20relaxing%20sound%20of%20the%20Pacific%20Ocean%20waves.mp3" type="audio/mpeg">
+</audio>
 
 <!-- LAYERS 1–11: sky + atmosphere + celestial bodies + clouds + birds(bg) + horizon + ocean + waves + reflections + mist -->
-<canvas id="envCanvas" aria-hidden="true"></canvas>
+<canvas id="envCanvas"></canvas>
 <div id="envVeil"></div>
 <div id="vignette"></div>
-<div id="seaDriftLayer"></div>
 
 <!-- Layer: environment toolbar (ambient sound play/pause + settings + capture) -->
-<div class="env-toolbar" id="envToolbar">
-  <button class="env-btn" id="natureSoundToggle" title="Play ambient ocean &amp; wind sound" aria-label="Play ambient ocean and wind sound">
-    <span id="natureSoundIcon">▶</span><span id="natureSoundLabel">Play sound</span>
-    <span class="env-eq"><span></span><span></span><span></span></span>
-  </button>
-  <button class="env-btn" id="natureSettingsToggle" title="Sound settings" aria-label="Open sound settings">⚙️ Settings</button>
-  <div class="env-btn wind-compass" id="windCompass" title="Current wind" aria-label="Current wind indicator">
-    <span class="compass-needle" id="compassNeedle">🧭</span><span id="windLabel">Calm</span>
+<div id="envHeaderWrap">
+  <div class="env-toolbar" id="envToolbar">
+    <button class="env-btn" id="natureSoundToggle" title="Play ocean &amp; wind sound">
+      <span id="natureSoundIcon">▶</span><span class="btn-text" id="natureSoundLabel">Play sound</span>
+      <span class="env-eq"><span></span><span></span><span></span></span>
+    </button>
+    <button class="env-btn" id="natureSettingsToggle" title="Sound settings">⚙️ Settings</button>
+    <div class="env-btn wind-compass" id="windCompass" title="Current wind">
+      <span class="compass-needle" id="compassNeedle">🧭</span><span id="windLabel">Calm</span>
+    </div>
+    <button class="env-btn" id="captureBtn" title="Capture this moment">📸 Capture</button>
+    <button class="env-btn" id="moreToggle" title="More options">⋯<span class="btn-text">&nbsp;More</span></button>
   </div>
-  <button class="env-btn" id="captureBtn" title="Capture this moment" aria-label="Capture this moment as an image">📸 Capture</button>
+  <button class="env-btn immersive-btn" id="immersiveToggle" title="Hide everything but the sky and ocean">🧘<span class="btn-text">&nbsp;Just the view</span></button>
 </div>
-<button class="env-btn immersive-btn" id="immersiveToggle" title="Hide everything but the sky and ocean" aria-label="Toggle immersive view">🧘 Just the view</button>
 <div class="env-panel" id="envPanel">
   <div class="env-panel-section">
     <div class="env-panel-heading">Ambience</div>
-    <div class="env-row"><label><input type="checkbox" id="toggleOcean" checked> Ocean</label></div>
-    <div class="env-row"><label><input type="checkbox" id="toggleWind" checked> Wind</label></div>
-    <div class="env-row"><span>Volume</span><input type="range" id="natureVolume" min="0" max="100" value="45" aria-label="Ambient sound volume"></div>
+    <div class="env-row"><label><input type="checkbox" id="toggleAmbience"> 🌊 Ocean &amp; wind sounds</label></div>
+    <div class="env-row"><span>Volume</span><input type="range" id="natureVolume" min="0" max="100" value="45"></div>
     <div class="env-row"><button class="env-btn" id="muteBtn" style="width:100%; justify-content:center;">🔈 Mute</button></div>
   </div>
   <div class="env-panel-section">
     <div class="env-panel-heading">Weather</div>
     <div class="env-row env-weather-row">
-      <button class="env-btn env-chip" data-weather="clear" aria-label="Clear weather">☀️ Clear</button>
-      <button class="env-btn env-chip" data-weather="cloudy" aria-label="Cloudy weather">☁️ Cloudy</button>
-      <button class="env-btn env-chip" data-weather="rain" aria-label="Rainy weather">🌧️ Rain</button>
-      <button class="env-btn env-chip" data-weather="storm" aria-label="Storm weather">⛈️ Storm</button>
+      <button class="env-btn env-chip" data-weather="clear">☀️ Clear</button>
+      <button class="env-btn env-chip" data-weather="cloudy">☁️ Cloudy</button>
+      <button class="env-btn env-chip" data-weather="rain">🌧️ Rain</button>
+      <button class="env-btn env-chip" data-weather="storm">⛈️ Storm</button>
     </div>
   </div>
   <div class="env-panel-section">
     <div class="env-panel-heading">More</div>
+    <div class="env-row"><span>Wind: <span id="windLabelPanel">Calm</span></span></div>
+    <div class="env-row"><button class="env-btn" id="captureBtnPanel" style="width:100%; justify-content:center;">📸 Capture this moment</button></div>
     <button class="env-btn env-panel-link" id="gotoMusicBtn" style="width:100%; justify-content:center;">🎵 Something to listen to</button>
   </div>
 </div>
@@ -667,7 +670,7 @@
 <!-- TIC TAC TOE PANEL -->
 <div class="side-panel" id="ticpanel">
   <button class="panel-back" data-back>← back</button>
-  <button class="panel-close" data-close="ticpanel" aria-label="Close tic tac toe panel">✕</button>
+  <button class="panel-close" data-close="ticpanel">✕</button>
   <h3>Tic Tac Toe</h3>
   <p class="sub">You're X. I'm O. Let's see how it goes.</p>
   <div class="ttt-board" id="tttBoard"></div>
@@ -678,7 +681,7 @@
 <!-- NOTEBOOK PANEL -->
 <div class="side-panel" id="ventpanel">
   <button class="panel-back" data-back>← back</button>
-  <button class="panel-close" data-close="ventpanel" aria-label="Close notebook panel">✕</button>
+  <button class="panel-close" data-close="ventpanel">✕</button>
   <h3>A Little Notebook</h3>
   <p class="sub">It turns its own pages. Just watch.</p>
   <div class="notebook">
@@ -687,8 +690,8 @@
   </div>
 </div>
 
-<button class="panel-toggle" id="ticToggle" title="Play Tic Tac Toe" aria-label="Open tic tac toe">⭕</button>
-<button class="panel-toggle" id="ventToggle" title="Notebook" aria-label="Open notebook">📖</button>
+<button class="panel-toggle" id="ticToggle" title="Play Tic Tac Toe">⭕</button>
+<button class="panel-toggle" id="ventToggle" title="Notebook">📖</button>
 <div class="stage">
 
   <!-- HOME / MENU -->
@@ -738,9 +741,9 @@
     <div class="song-list">
       <a class="song" href="https://www.youtube.com/watch?v=xEeFrLSkMm8" target="_blank" rel="noopener"><span><span class="title">Spring Day</span><br><span class="mood">soft, wistful</span></span><span class="play-icon">▶</span></a>
       <a class="song" href="https://www.youtube.com/watch?v=VTRGOBT6p80" target="_blank" rel="noopener"><span><span class="title">Magic Shop</span><br><span class="mood">gentle, reassuring</span></span><span class="play-icon">▶</span></a>
-      <a class="song" href="https://www.youtube.com/watch?v=fIkZOLsnoqY" target="_blank" rel="noopener"><span><span class="title">Epiphany</span><br><span class="mood">slow piano ballad</span></span><span class="play-icon">▶</span></a>
-      <a class="song" href="https://www.youtube.com/watch?v=BEMaH9Sm3lQ" target="_blank" rel="noopener"><span><span class="title">Serendipity</span><br><span class="mood">dreamy, light</span></span><span class="play-icon">▶</span></a>
-      <a class="song" href="https://www.youtube.com/watch?v=iP62Tg04vww" target="_blank" rel="noopener"><span><span class="title">Blue & Grey</span><br><span class="mood">quiet, melancholic</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Epiphany+official" target="_blank" rel="noopener"><span><span class="title">Epiphany</span><br><span class="mood">slow piano ballad</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Serendipity+official" target="_blank" rel="noopener"><span><span class="title">Serendipity</span><br><span class="mood">dreamy, light</span></span><span class="play-icon">▶</span></a>
+      <a class="song" href="https://www.youtube.com/results?search_query=BTS+Blue+and+Grey+official" target="_blank" rel="noopener"><span><span class="title">Blue & Grey</span><br><span class="mood">quiet, melancholic</span></span><span class="play-icon">▶</span></a>
     </div>
     <p class="music-note">Tap any song to open it</p>
   </div>
@@ -776,7 +779,7 @@
 <script>
 /* =========================================================================
    PART A — original page functionality (menu nav, corners, tic-tac-toe,
-   notebook, penguin greeting, music toggle, origami decorations). Preserved.
+   notebook, penguin greeting, music toggle). Preserved.
    ========================================================================= */
 
   // Typewriter greeting — now time-of-day aware
@@ -843,28 +846,18 @@
   document.getElementById('shayriNext').addEventListener('click', () => cycle('shayri', document.getElementById('shayriText')));
   document.getElementById('aboutNext').addEventListener('click', () => cycle('about', document.getElementById('aboutText')));
 
-  // Breathing exercise — now auto-stops after 4 rounds, matching the on-screen copy
+  // Breathing exercise
   const breatheCircle = document.getElementById('breatheCircle');
   const breatheHint = document.getElementById('breatheHint');
   const breatheStart = document.getElementById('breatheStart');
-  const BREATHE_TOTAL_ROUNDS = 4;
   let breatheTimer = null;
   let breatheRunning = false;
-  let breatheRound = 0;
-
-  function resetBreatheUI(){
-    breatheCircle.classList.remove('in', 'out');
-    breatheCircle.textContent = 'breathe';
-    breatheHint.textContent = 'Tap start. Follow the circle — in as it grows, out as it shrinks. Four rounds is usually enough.';
-    breatheStart.textContent = 'Start';
-  }
 
   function runBreatheCycle() {
-    breatheRound++;
     breatheCircle.classList.remove('out');
     breatheCircle.classList.add('in');
     breatheCircle.textContent = 'in...';
-    breatheHint.textContent = `Breathe in slowly through your nose. (Round ${breatheRound} of ${BREATHE_TOTAL_ROUNDS})`;
+    breatheHint.textContent = 'Breathe in slowly through your nose.';
     breatheTimer = setTimeout(() => {
       breatheCircle.textContent = 'hold';
       breatheHint.textContent = 'Hold it for a moment.';
@@ -874,15 +867,7 @@
         breatheCircle.textContent = 'out...';
         breatheHint.textContent = 'Let it go slowly through your mouth.';
         breatheTimer = setTimeout(() => {
-          if (breatheRunning && breatheRound < BREATHE_TOTAL_ROUNDS) {
-            runBreatheCycle();
-          } else if (breatheRunning) {
-            breatheRunning = false;
-            breatheCircle.classList.remove('in', 'out');
-            breatheCircle.textContent = 'breathe';
-            breatheHint.textContent = "That's four rounds — nicely done. Tap start if you'd like to go again.";
-            breatheStart.textContent = 'Start';
-          }
+          if (breatheRunning) runBreatheCycle();
         }, 4000);
       }, 1600);
     }, 4000);
@@ -892,35 +877,32 @@
     if (breatheRunning) {
       breatheRunning = false;
       clearTimeout(breatheTimer);
-      resetBreatheUI();
+      breatheCircle.classList.remove('in', 'out');
+      breatheCircle.textContent = 'breathe';
+      breatheHint.textContent = 'Tap start. Follow the circle — in as it grows, out as it shrinks. Four rounds is usually enough.';
+      breatheStart.textContent = 'Start';
     } else {
       breatheRunning = true;
-      breatheRound = 0;
       breatheStart.textContent = 'Stop';
       runBreatheCycle();
     }
   });
 
   // Navigation
-  const VALID_SCREENS = ['home','krishna','breathe','music','shayri','about','note'];
-  function showScreen(id, opts) {
-    opts = opts || {};
+  function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     if (id !== 'breathe' && breatheRunning) {
       breatheRunning = false;
       clearTimeout(breatheTimer);
-      resetBreatheUI();
+      breatheCircle.classList.remove('in', 'out');
+      breatheCircle.textContent = 'breathe';
+      breatheStart.textContent = 'Start';
     }
     closeAllPanels();
     // mood-matched water: calmer, cooler tint on the reflective/quiet corners
     const calmScreens = ['breathe', 'krishna'];
     document.getElementById('envCanvas').classList.toggle('calm-tint', calmScreens.includes(id));
-    // keep the URL shareable/refreshable — deep-link to whichever corner is open
-    if (!opts.skipHash) {
-      const hash = id === 'home' ? '#' : '#' + id;
-      if (window.location.hash !== hash) history.replaceState(null, '', hash);
-    }
   }
 
   function closeAllPanels() {
@@ -932,16 +914,6 @@
   document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.target)));
   document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click', () => showScreen('home')));
   document.getElementById('surpriseBtn').addEventListener('click', () => surpriseReveal());
-
-  // Land directly on a shared/refreshed corner if the URL has one, otherwise home
-  (function initFromHash(){
-    const id = (window.location.hash || '').replace('#','');
-    if (VALID_SCREENS.includes(id) && id !== 'home') showScreen(id, { skipHash:true });
-  })();
-  window.addEventListener('hashchange', () => {
-    const id = (window.location.hash || '').replace('#','');
-    showScreen(VALID_SCREENS.includes(id) ? id : 'home', { skipHash:true });
-  });
 
   // Tic Tac Toe
   const tttBoard = document.getElementById('tttBoard');
@@ -979,11 +951,7 @@
       const cell = document.createElement('div');
       cell.className = 'ttt-cell' + (val === 'X' ? ' x' : val === 'O' ? ' o' : '');
       cell.textContent = val;
-      cell.setAttribute('role', 'button');
-      cell.setAttribute('tabindex', '0');
-      cell.setAttribute('aria-label', val ? `Cell ${i+1}: ${val}` : `Cell ${i+1}: empty`);
       cell.addEventListener('click', () => tttPlayerMove(i));
-      cell.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tttPlayerMove(i); } });
       tttBoard.appendChild(cell);
     });
   }
@@ -1009,7 +977,7 @@
 
   function tttEnd(result) {
     tttOver = true;
-    tttStatus.textContent = result === 'O' ? "I won this one! 😏" : result === 'X' ? "You won! 🎉" : "It's a draw.";
+    tttStatus.textContent = result === 'O' ? "Prathamesh won! 😏" : result === 'X' ? "You won! 🎉" : "It's a draw.";
   }
 
   tttReset.addEventListener('click', () => {
@@ -1078,12 +1046,7 @@
   });
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Mobile/desktop density switch — kept in sync with the 1180px breakpoint the
-  // side-panel CSS uses, and re-evaluated on resize so rotating a tablet or
-  // resizing a desktop window doesn't leave stale visual density behind.
-  const mobileQuery = window.matchMedia('(max-width: 1180px)');
-  let isMobile = mobileQuery.matches;
-  mobileQuery.addEventListener('change', (e) => { isMobile = e.matches; });
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
 /* =========================================================================
    PART C — "Surprise for you" reveal, now an immersive environment dip (§33)
@@ -1119,30 +1082,18 @@
    particle swarm — §27).
    ========================================================================= */
 
-  // Debug hooks are opt-in only (add ?debug=1 to the URL) so they never
-  // ship "live" for a normal visitor, while staying available for testing.
-  const DEBUG_SKY = new URLSearchParams(window.location.search).get('debug') === '1';
+  const DEBUG_SKY = false; // flip true + use window.setDebugTime()/setWeather() from devtools
   let debugMinutes = null; // e.g. 5*60+30 for 05:30, set via setDebugTime()
-  if (DEBUG_SKY) {
-    window.setDebugTime = function(hhmm){
-      const [h,m] = hhmm.split(':').map(Number);
-      debugMinutes = h*60 + (m||0);
-      showToast('debug time set → ' + hhmm);
-    };
-    window.setWeather = function(w){
-      if (!['clear','cloudy','rain','storm'].includes(w)) return;
-      window.envEngine && (window.envEngine.weather = w);
-      showToast('weather → ' + w);
-    };
-    console.info('[arpi-page] debug mode on — window.setDebugTime("HH:MM") / window.setWeather("clear|cloudy|rain|storm")');
-  } else {
-    // still expose setWeather for the in-page weather chips (non-debug, safe)
-    window.setWeather = function(w){
-      if (!['clear','cloudy','rain','storm'].includes(w)) return;
-      window.envEngine && (window.envEngine.weather = w);
-      showToast('weather → ' + w);
-    };
-  }
+  window.setDebugTime = function(hhmm){
+    const [h,m] = hhmm.split(':').map(Number);
+    debugMinutes = h*60 + (m||0);
+    showToast('debug time set → ' + hhmm);
+  };
+  window.setWeather = function(w){
+    if (!['clear','cloudy','rain'].includes(w)) return;
+    window.envEngine && (window.envEngine.weather = w);
+    showToast('weather → ' + w);
+  };
 
   // ---- colour + math helpers ----
   function hexToRgb(hex){
@@ -1434,6 +1385,11 @@
       this.moonElevation = Math.sin(Math.PI * clamp(moonFrac,0,1)) * (moonFrac>=0 && moonFrac<=1 ? 1 : 0);
       this.moonX = clamp(moonFrac,0,1);
       this.moonVisible = moonFrac >= -0.02 && moonFrac <= 1.02;
+
+      // bird activity peaks around dawn / dusk, silent at night (§11)
+      const dawnPeak = Math.exp(-Math.pow(t-7,2)/6);
+      const duskPeak = Math.exp(-Math.pow(t-18,2)/6);
+      window.envBirdActivity = this._birdsOn === false ? 0 : clamp(Math.max(dawnPeak,duskPeak)*0.9 + (t>7&&t<18?0.15:0), 0, 1);
 
       // adaptive UI (§23)
       this._applyUI(this.state.ui);
@@ -1806,14 +1762,12 @@
   window.envEngine = envEngine;
 
 /* =========================================================================
-   PART E — ambient nature-sound engine (Web Audio synthesis, no external
-   audio files needed; respects autoplay restrictions — §5,§12,§13,§30)
+   PART E — event sounds (Web Audio synthesis for the sunrise/sunset chime
+   and storm thunder). The continuous ocean/wind ambience is now a real
+   audio track, played separately below.
    ========================================================================= */
   const NatureSound = {
-    ctx: null, master: null,
-    oceanGain: null, windGain: null,
-    oceanFilter: null, running: false, muted: false,
-    _windTimer: null,
+    ctx: null, master: null, muted: false,
 
     ensureContext(){
       if (this.ctx) return;
@@ -1823,8 +1777,6 @@
       this.master = this.ctx.createGain();
       this.master.gain.value = 0.45;
       this.master.connect(this.ctx.destination);
-      this._buildOcean();
-      this._buildWind();
     },
     _noiseBuffer(seconds=4){
       const sr = this.ctx.sampleRate;
@@ -1838,67 +1790,6 @@
       }
       return buf;
     },
-    _buildOcean(){
-      const src = this.ctx.createBufferSource();
-      src.buffer = this._noiseBuffer(6);
-      src.loop = true;
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 900;
-      const gain = this.ctx.createGain();
-      gain.gain.value = 0;
-      src.connect(filter); filter.connect(gain); gain.connect(this.master);
-      src.start();
-      this.oceanGain = gain; this.oceanFilter = filter;
-      this._swellLFO();
-    },
-    _swellLFO(){
-      // slow randomized swell so it never sounds like a perfect loop (§13)
-      const step = () => {
-        if (!this.ctx) return;
-        const target = 0.22 + Math.random()*0.18;
-        const dur = 3.5 + Math.random()*3;
-        this.oceanGain.gain.cancelScheduledValues(this.ctx.currentTime);
-        this.oceanGain.gain.linearRampToValueAtTime(this.running && !this.muted && (this._oceanOn !== false) ? target : 0, this.ctx.currentTime + dur);
-        this.oceanFilter.frequency.linearRampToValueAtTime(700 + Math.random()*500, this.ctx.currentTime + dur);
-        this._swellTimer = setTimeout(step, dur*1000);
-      };
-      step();
-    },
-    _buildWind(){
-      const src = this.ctx.createBufferSource();
-      src.buffer = this._noiseBuffer(5);
-      src.loop = true;
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.value = 400;
-      filter.Q.value = 0.6;
-      const gain = this.ctx.createGain();
-      gain.gain.value = 0;
-      src.connect(filter); filter.connect(gain); gain.connect(this.master);
-      src.start();
-      this.windGain = gain; this.windFilter = filter;
-      this._windVariation();
-    },
-    _windVariation(){
-      const step = () => {
-        if (!this.ctx) return;
-        const wind = window.envWind ?? 0.4;
-        const target = this.running && !this.muted && (this._windOn !== false) ? clamp(0.03 + wind*0.12, 0, 0.2) : 0;
-        const dur = 4 + Math.random()*4;
-        this.windGain.gain.cancelScheduledValues(this.ctx.currentTime);
-        this.windGain.gain.linearRampToValueAtTime(target, this.ctx.currentTime + dur);
-        this._windTimer = setTimeout(step, dur*1000);
-      };
-      step();
-    },
-    start(){
-      this.ensureContext();
-      if (!this.ctx) return;
-      if (this.ctx.state === 'suspended') this.ctx.resume();
-      this.running = true;
-    },
-    stop(){ this.running = false; },
     chime(){
       // a soft, single bell-like tone for sunrise/sunset transitions
       this.ensureContext();
@@ -1941,100 +1832,89 @@
     setMuted(m){
       this.muted = m;
       if (this.master) this.master.gain.setTargetAtTime(m?0:0.45, this.ctx?.currentTime||0, 0.3);
-    },
-    setVolume(v){ if (this.master) this.master.gain.setTargetAtTime(v, this.ctx?.currentTime||0, 0.2); }
+    }
   };
-
-  // ---- persisted preferences (real deployed page: localStorage is safe here) ----
-  const PREF_KEY = 'arpi-page-prefs-v1';
-  function loadPrefs(){
-    try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; }
-    catch(e){ return {}; }
-  }
-  function savePrefs(patch){
-    try {
-      const cur = loadPrefs();
-      localStorage.setItem(PREF_KEY, JSON.stringify(Object.assign(cur, patch)));
-    } catch(e){ /* storage unavailable — fail silently, nothing critical depends on it */ }
-  }
-  const prefs = loadPrefs();
 
   const natureBtn = document.getElementById('natureSoundToggle');
   const natureIcon = document.getElementById('natureSoundIcon');
   const natureLabel = document.getElementById('natureSoundLabel');
   const natureSettingsBtn = document.getElementById('natureSettingsToggle');
   const envPanel = document.getElementById('envPanel');
+  const oceanAudio = document.getElementById('oceanAudio');
+  const ambienceCheckbox = document.getElementById('toggleAmbience');
+  oceanAudio.volume = 0.45;
 
-  // Button 1: Play / Pause — only starts or stops the ambient audio.
-  // Sound itself never auto-plays (browser autoplay rules + good manners) —
-  // only the on/off *preference* is restored, requiring one tap to resume audio.
-  let natureOn = false;
-  function setNatureOn(on){
-    natureOn = on;
-    natureBtn.classList.toggle('on', natureOn);
-    natureIcon.textContent = natureOn ? '⏸' : '▶';
-    natureLabel.textContent = natureOn ? 'Pause sound' : 'Play sound';
-    if (natureOn) NatureSound.start(); else NatureSound.stop();
+  // Single source of truth for ocean & wind playback — keeps the toolbar
+  // Play/Pause pill and the panel checkbox in sync with each other and
+  // with the actual <audio> element.
+  function setAmbiencePlaying(on){
+    ambienceCheckbox.checked = on;
+    natureBtn.classList.toggle('on', on);
+    natureIcon.textContent = on ? '⏸' : '▶';
+    natureLabel.textContent = on ? 'Pause sound' : 'Play sound';
+    if (on) {
+      oceanAudio.play().catch(() => {
+        // autoplay can be blocked until a user gesture — the click that
+        // got us here counts, but just in case, reflect the failure
+        setAmbiencePlaying(false);
+      });
+    } else {
+      oceanAudio.pause();
+    }
   }
-  natureBtn.addEventListener('click', () => { setNatureOn(!natureOn); savePrefs({ soundOn: natureOn }); });
 
-  // Button 2: Settings — only opens/closes the panel. Playback keeps
+  natureBtn.addEventListener('click', () => setAmbiencePlaying(!ambienceCheckbox.checked));
+  ambienceCheckbox.addEventListener('change', (e) => setAmbiencePlaying(e.target.checked));
+
+  // Button: Settings — only opens/closes the panel. Playback keeps
   // running (or stays paused) no matter what the panel is doing, and it
   // won't close itself just because you clicked elsewhere.
-  natureSettingsBtn.addEventListener('click', () => {
+  const moreToggleBtn = document.getElementById('moreToggle');
+  function togglePanel(){
     const open = envPanel.classList.toggle('open');
     natureSettingsBtn.classList.toggle('on', open);
-  });
+    moreToggleBtn.classList.toggle('on', open);
+  }
+  natureSettingsBtn.addEventListener('click', togglePanel);
+  moreToggleBtn.addEventListener('click', togglePanel);
 
-  const toggleOceanEl = document.getElementById('toggleOcean');
-  const toggleWindEl = document.getElementById('toggleWind');
-  const volumeEl = document.getElementById('natureVolume');
-  const muteBtnEl = document.getElementById('muteBtn');
-
-  if (typeof prefs.oceanOn === 'boolean') toggleOceanEl.checked = prefs.oceanOn;
-  if (typeof prefs.windOn === 'boolean') toggleWindEl.checked = prefs.windOn;
-  if (typeof prefs.volume === 'number') volumeEl.value = prefs.volume;
-  NatureSound._oceanOn = toggleOceanEl.checked;
-  NatureSound._windOn = toggleWindEl.checked;
-  if (prefs.muted){ NatureSound.setMuted(true); muteBtnEl.textContent = '🔇 Unmute'; }
-  if (typeof prefs.weather === 'string') window.envEngine.weather = prefs.weather;
-
-  toggleOceanEl.addEventListener('change', (e) => { NatureSound._oceanOn = e.target.checked; savePrefs({ oceanOn: e.target.checked }); });
-  toggleWindEl.addEventListener('change', (e) => { NatureSound._windOn = e.target.checked; savePrefs({ windOn: e.target.checked }); });
-  volumeEl.addEventListener('input', (e) => { NatureSound.setVolume(e.target.value/100*0.6); savePrefs({ volume: Number(e.target.value) }); });
-  muteBtnEl.addEventListener('click', (e) => {
-    NatureSound.setMuted(!NatureSound.muted);
-    e.target.textContent = NatureSound.muted ? '🔇 Unmute' : '🔈 Mute';
-    savePrefs({ muted: NatureSound.muted });
+  document.getElementById('natureVolume').addEventListener('input', (e) => { oceanAudio.volume = e.target.value/100; });
+  document.getElementById('muteBtn').addEventListener('click', (e) => {
+    const m = !oceanAudio.muted;
+    oceanAudio.muted = m;
+    NatureSound.setMuted(m);
+    e.target.textContent = m ? '🔇 Unmute' : '🔈 Mute';
   });
 
   // Weather chips (§14/§26 debug-friendly weather switch) — cosmetic on
-  // the sky/ocean canvas; independent of the ambient sound layers above.
+  // the sky/ocean canvas; independent of the ambient sound above.
   const weatherChips = document.querySelectorAll('.env-chip[data-weather]');
   weatherChips.forEach(chip => {
     chip.addEventListener('click', () => {
       weatherChips.forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
       window.setWeather(chip.dataset.weather);
-      savePrefs({ weather: chip.dataset.weather });
     });
   });
-  const restoredWeather = typeof prefs.weather === 'string' ? prefs.weather : 'clear';
-  weatherChips.forEach(c => c.classList.toggle('active', c.dataset.weather === restoredWeather));
+  weatherChips[0] && weatherChips[0].classList.add('active');
 
   // "Something to listen to" shortcut — jumps to the existing song corner.
   document.getElementById('gotoMusicBtn').addEventListener('click', () => {
     envPanel.classList.remove('open');
     natureSettingsBtn.classList.remove('on');
+    moreToggleBtn.classList.remove('on');
     showScreen('music');
   });
 
 /* =========================================================================
    PART F-1 — wind compass: ties the invisible wind system to something
-   visible in the toolbar (needle direction + strength label).
+   visible in the toolbar (needle direction + strength label), and mirrors
+   the reading into the "More" panel for narrow screens where the compass
+   pill itself is hidden.
    ========================================================================= */
   const compassNeedle = document.getElementById('compassNeedle');
   const windLabel = document.getElementById('windLabel');
+  const windLabelPanel = document.getElementById('windLabelPanel');
   let compassAngle = 0;
   setInterval(() => {
     const wind = window.envWind ?? 0.4;
@@ -2042,69 +1922,29 @@
     compassAngle += (Math.random()-0.5) * wind * 70;
     compassAngle = clamp(compassAngle, -55, 55);
     compassNeedle.style.transform = `rotate(${compassAngle}deg)`;
-    windLabel.textContent = wind < 0.25 ? 'Calm' : wind < 0.5 ? 'Light breeze' : wind < 0.75 ? 'Breezy' : 'Windy';
+    const label = wind < 0.25 ? 'Calm' : wind < 0.5 ? 'Light breeze' : wind < 0.75 ? 'Breezy' : 'Windy';
+    windLabel.textContent = label;
+    windLabelPanel.textContent = label;
   }, 1400);
-
-/* =========================================================================
-   PART F-2 — drifting paper boat: floats across the ocean every so often;
-   tap it to reveal a small hidden note, separate from the menu corners.
-   ========================================================================= */
-  const seaDriftLayer = document.getElementById('seaDriftLayer');
-  const driftNotes = [
-    "if this little boat ever reaches you for real — i hope it's carrying good news.",
-    "psst. you found the boat. that's basically a superpower.",
-    "somewhere out there, a note in a bottle just for you. hi, Arpi.",
-    "the ocean's just doing its job. so is this boat. so are you.",
-    "small boats carry small notes. this one just says: you're doing okay."
-  ];
-  function spawnSeaDrift(){
-    if (prefersReducedMotion) return;
-    if (document.hidden) return;
-    const el = document.createElement('div');
-    el.className = 'sea-drift';
-    const isBottle = Math.random() < 0.4;
-    el.textContent = isBottle ? '🍾' : '⛵';
-    el.setAttribute('role', 'button');
-    el.setAttribute('tabindex', '0');
-    el.setAttribute('aria-label', 'A drifting note — tap to read it');
-    const engine = window.envEngine;
-    const hz = engine ? engine.horizonY : window.innerHeight*0.6;
-    const topPct = hz + (window.innerHeight - hz) * (0.2 + Math.random()*0.55);
-    el.style.top = topPct + 'px';
-    const dur = 22 + Math.random()*14;
-    el.style.animationDuration = dur + 's';
-    const reveal = () => {
-      showToast('💌 ' + driftNotes[Math.floor(Math.random()*driftNotes.length)]);
-      el.remove();
-    };
-    el.addEventListener('click', reveal);
-    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reveal(); } });
-    seaDriftLayer.appendChild(el);
-    setTimeout(() => el.remove(), dur*1000 + 300);
-  }
-  function scheduleSeaDrift(){
-    const delay = 14000 + Math.random()*22000;
-    setTimeout(() => { spawnSeaDrift(); scheduleSeaDrift(); }, delay);
-  }
-  scheduleSeaDrift();
-  setTimeout(spawnSeaDrift, 4000);
 
 /* =========================================================================
    PART F0 — "Just the view": hides every card/panel/toolbar so only the
    living sky + ocean (and this button) remain on screen.
    ========================================================================= */
   const immersiveBtn = document.getElementById('immersiveToggle');
+  const immersiveBtnText = immersiveBtn.querySelector('.btn-text');
   let immersive = false;
   immersiveBtn.addEventListener('click', () => {
     immersive = !immersive;
     document.body.classList.toggle('immersive-mode', immersive);
-    immersiveBtn.textContent = immersive ? '↩ Bring it back' : '🧘 Just the view';
+    immersiveBtn.firstChild.textContent = immersive ? '↩' : '🧘';
+    immersiveBtnText.textContent = immersive ? ' Bring it back' : ' Just the view';
   });
 
 /* =========================================================================
    PART F — capture moment (§34): snapshots the live sky+ocean canvas
    ========================================================================= */
-  document.getElementById('captureBtn').addEventListener('click', () => {
+  function doCapture(){
     const flash = document.getElementById('captureFlash');
     flash.classList.add('flash');
     setTimeout(() => flash.classList.remove('flash'), 140);
@@ -2119,7 +1959,9 @@
     } catch(err){
       showToast('capture unavailable on this browser');
     }
-  });
+  }
+  document.getElementById('captureBtn').addEventListener('click', doCapture);
+  document.getElementById('captureBtnPanel').addEventListener('click', doCapture);
 </script>
 </body>
 </html>
