@@ -50,6 +50,9 @@
     position:fixed; inset:0; z-index:-2; background:#000; opacity:0;
     pointer-events:none; transition:opacity 1.4s ease;
   }
+  /* quick whimsical flash used when the weather is changed via the wand
+     or the chips — overrides the slower default transition above */
+  #envVeil.weather-flash{ opacity:.32; transition:opacity .22s ease-out; }
 
   /* cinematic vignette (§ "visual polish") */
   #vignette{
@@ -647,6 +650,7 @@
   </div>
   <div class="env-panel-section">
     <div class="env-panel-heading">Weather</div>
+    <div class="env-row"><button class="env-btn" id="weatherWandBtn" style="width:100%; justify-content:center;">🪄 Change the weather</button></div>
     <div class="env-row env-weather-row">
       <button class="env-btn env-chip" data-weather="clear">☀️ Clear</button>
       <button class="env-btn env-chip" data-weather="cloudy">☁️ Cloudy</button>
@@ -657,6 +661,7 @@
   <div class="env-panel-section">
     <div class="env-panel-heading">More</div>
     <div class="env-row"><span>Wind: <span id="windLabelPanel">Calm</span></span></div>
+    <div class="env-row"><button class="env-btn" id="wishBtn" style="width:100%; justify-content:center;">✨ Make a wish</button></div>
     <div class="env-row"><button class="env-btn" id="captureBtnPanel" style="width:100%; justify-content:center;">📸 Capture this moment</button></div>
     <button class="env-btn env-panel-link" id="gotoMusicBtn" style="width:100%; justify-content:center;">🎵 Something to listen to</button>
   </div>
@@ -1177,6 +1182,8 @@
       this._resize();
       this._buildStars();
       this._buildClouds();
+      this._buildMountains();
+      this._buildFireflies();
       this._bindPointer();
       window.addEventListener('resize', () => this._resize());
       this.state = sampleKeyframes(12);
@@ -1208,6 +1215,71 @@
         while (picked.size < 5) picked.add(Math.floor(Math.random()*this.stars.length));
         this.constellationIdx = [...picked];
       }
+    }
+    _buildMountains(){
+      // two ranges: a farther, softer/lighter one and a nearer, darker one
+      // that sits closer to the horizon. Both are procedurally jagged so
+      // they don't look like a repeating pattern, and both drift very
+      // slowly with the same parallax the clouds use, just much subtler.
+      const layers = [
+        { peaks: 6, heightScale: 0.15, alpha: 0.55, depthShade: 0.85, parallax: 3 },
+        { peaks: 5, heightScale: 0.22, alpha: 0.8,  depthShade: 0.55, parallax: 6 }
+      ];
+      this.mountainLayers = layers.map(layer => {
+        const n = layer.peaks;
+        const points = [];
+        for (let i=0;i<=n;i++){
+          points.push({ x: i/n, h: 0.35 + Math.random()*0.65 });
+        }
+        return Object.assign({}, layer, { points });
+      });
+    }
+    _buildFireflies(){
+      // small glowing dots that hover near the shoreline (just above the
+      // horizon, around the mountain silhouettes) — only visible once
+      // night sets in. Fixed-size pool: popped ones quietly respawn
+      // elsewhere after a little while instead of vanishing for good.
+      const n = isMobile ? 7 : 12;
+      this.fireflies = Array.from({length:n}, () => this._freshFirefly());
+      this._fireflyScreens = [];
+      this.fireflyScatter = [];
+    }
+    _freshFirefly(){
+      return {
+        x: Math.random(),
+        yOff: 10 + Math.random()*54,
+        phase: Math.random()*Math.PI*2,
+        driftPhase: Math.random()*Math.PI*2,
+        speed: 0.5 + Math.random()*0.5,
+        r: 1.5 + Math.random()*1.3,
+        alive: true,
+        respawnAt: 0
+      };
+    }
+    _hitTestFirefly(x, y){
+      if (!this._fireflyScreens || !this._fireflyScreens.length) return null;
+      for (const s of this._fireflyScreens){
+        const dx = x - s.x, dy = y - s.y;
+        if (dx*dx + dy*dy < Math.pow(s.r + 14, 2)) return s.ref;
+      }
+      return null;
+    }
+    _popFirefly(f){
+      if (!f.alive) return;
+      f.alive = false;
+      f.respawnAt = this.time + 6 + Math.random()*10;
+      const sx = f._lastX ?? 0, sy = f._lastY ?? 0;
+      const count = 7;
+      for (let i=0;i<count;i++){
+        const angle = (Math.PI*2*i)/count + Math.random()*0.5;
+        const speed = 30 + Math.random()*50;
+        this.fireflyScatter.push({
+          x:sx, y:sy,
+          vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+          life:0, maxLife:0.5+Math.random()*0.35
+        });
+      }
+      showToast('✨');
     }
     _spawnShootingStar(){
       const startX = this.w*0.15 + Math.random()*this.w*0.7;
@@ -1260,7 +1332,10 @@
           this._dragMoved = false;
           this._dragStartXY = {x,y};
           try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+          return;
         }
+        const hitFirefly = this._hitTestFirefly(x, y);
+        if (hitFirefly) this._popFirefly(hitFirefly);
       });
 
       canvas.addEventListener('pointermove', (e) => {
@@ -1414,6 +1489,25 @@
       });
       this.ripples = this.ripples.filter(r => { r.age += dt; return r.age < r.maxAge; });
 
+      // fireflies: gentle drift while alive, quiet respawn once popped
+      if (this.fireflies){
+        this.fireflies.forEach(f => {
+          if (f.alive){
+            f.x += Math.sin(this.time*0.06 + f.driftPhase) * 0.0007;
+            if (f.x > 1.05) f.x -= 1.1;
+            if (f.x < -0.05) f.x += 1.1;
+          } else if (this.time >= f.respawnAt){
+            Object.assign(f, this._freshFirefly());
+          }
+        });
+      }
+      if (this.fireflyScatter && this.fireflyScatter.length){
+        this.fireflyScatter = this.fireflyScatter.filter(p => {
+          p.life += dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.95; p.vy *= 0.95;
+          return p.life < p.maxLife;
+        });
+      }
+
       // storm lightning + thunder
       if (this.weather === 'storm' && !this.reduced){
         if (!this._nextLightning) this._nextLightning = this.time + 3;
@@ -1459,6 +1553,94 @@
         root.setProperty('--accent', '#eccf94');
         root.setProperty('--glow', '#d9b872');
       }
+    }
+    _drawMountains(ctx, w, h, hz, st){
+      if (!this.mountainLayers) return;
+      // warm rim-light window: roughly sunrise and sunset, matching the
+      // hours where the timeline keyframes above turn the sky warm/amber
+      const nearSunrise = this.hour > 4.8 && this.hour < 7.6;
+      const nearSunset = this.hour > 17.2 && this.hour < 19.6;
+      const rimActive = nearSunrise || nearSunset;
+      const rimColor = nearSunrise ? [255, 190, 140] : [255, 150, 100];
+      // fade the rim in/out smoothly rather than snapping on/off
+      let rimStrength = 0;
+      if (nearSunrise) rimStrength = 1 - Math.min(1, Math.abs(this.hour - 6.2) / 1.4);
+      if (nearSunset) rimStrength = 1 - Math.min(1, Math.abs(this.hour - 18.4) / 1.2);
+      rimStrength = clamp(rimStrength, 0, 1);
+
+      this.mountainLayers.forEach((layer, li) => {
+        ctx.save();
+        ctx.translate(this.parallax.x * layer.parallax, 0);
+        const maxHeight = h * layer.heightScale;
+        const baseColor = lerpRgb(st.skyHorizon, st.oceanTop, 0.3 + li*0.2).map(c => c * layer.depthShade);
+
+        ctx.beginPath();
+        ctx.moveTo(-60, hz + 2);
+        layer.points.forEach(p => {
+          const x = p.x * (w + 120) - 60;
+          const y = hz - p.h * maxHeight;
+          ctx.lineTo(x, y);
+        });
+        ctx.lineTo(w + 60, hz + 2);
+        ctx.closePath();
+        ctx.fillStyle = rgbToCss(baseColor, layer.alpha);
+        ctx.fill();
+
+        // soft warm rim light traced along the ridge line at dawn/dusk —
+        // stronger and crisper on the nearer, darker range
+        if (rimActive && rimStrength > 0.02){
+          ctx.save();
+          ctx.globalAlpha = rimStrength * (li === 1 ? 0.85 : 0.45);
+          ctx.strokeStyle = rgbToCss(rimColor, 1);
+          ctx.lineWidth = li === 1 ? 2.2 : 1.4;
+          ctx.beginPath();
+          layer.points.forEach((p, i) => {
+            const x = p.x * (w + 120) - 60;
+            const y = hz - p.h * maxHeight;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.restore();
+      });
+    }
+    _drawFireflies(ctx, w, h, hz, st){
+      // fade in alongside the stars — invisible in daylight, fully out by
+      // full dark. Positioned just above the horizon near the mountains.
+      const visibility = clamp((st.stars - 0.25) / 0.5, 0, 1);
+      this._fireflyScreens = [];
+      if (visibility <= 0.01 || !this.fireflies) return;
+      ctx.save();
+      this.fireflies.forEach(f => {
+        if (!f.alive) return;
+        const x = f.x * w;
+        const y = hz - f.yOff + Math.sin(this.time*f.speed + f.phase) * 7;
+        f._lastX = x; f._lastY = y;
+        this._fireflyScreens.push({ x, y, r:f.r, ref:f });
+        const pulse = 0.4 + 0.6 * Math.max(0, Math.sin(this.time*1.8 + f.phase*3));
+        const alpha = visibility * pulse;
+        const glow = ctx.createRadialGradient(x,y,0,x,y,f.r*6);
+        glow.addColorStop(0, `rgba(210,255,150,${alpha*0.9})`);
+        glow.addColorStop(1, 'rgba(210,255,150,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(x,y,f.r*6,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#eaffb0';
+        ctx.beginPath(); ctx.arc(x,y,f.r,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+      // little scatter sparkles left behind when one gets tapped
+      if (this.fireflyScatter && this.fireflyScatter.length){
+        this.fireflyScatter.forEach(p => {
+          const fade = 1 - p.life/p.maxLife;
+          ctx.globalAlpha = fade;
+          ctx.fillStyle = '#f4ffd0';
+          ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, Math.PI*2); ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
     }
     _draw(){
       const ctx = this.ctx, w = this.w, h = this.h, hz = this.horizonY;
@@ -1598,6 +1780,11 @@
       ctx.filter = 'none';
       ctx.restore();
 
+      // Layer 6: mountain silhouettes (far + near ranges) — sit at the
+      // horizon between the clouds and the water, with a warm rim-light
+      // pass at sunrise/sunset
+      this._drawMountains(ctx, w, h, hz, st);
+
       // Layer 7: horizon haze
       const hazeGrad = ctx.createLinearGradient(0, hz-40, 0, hz+40);
       hazeGrad.addColorStop(0, rgbToCss(st.skyHorizon, 0));
@@ -1696,6 +1883,9 @@
       mistGrad.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = mistGrad;
       ctx.fillRect(0, hz-14, w, 74);
+
+      // fireflies — tappable, glow in near the mountains once dusk settles
+      this._drawFireflies(ctx, w, h, hz, st);
 
       // rain overlay (weather system stub, §14)
       if (this.weather === 'rain' && !this.reduced){
@@ -1886,17 +2076,52 @@
     e.target.textContent = m ? '🔇 Unmute' : '🔈 Mute';
   });
 
-  // Weather chips (§14/§26 debug-friendly weather switch) — cosmetic on
-  // the sky/ocean canvas; independent of the ambient sound above.
+  // Weather — framed as something she's conjuring rather than a plain
+  // setting. Both the chips and the wand button go through the same
+  // whimsical path: a quick veil flash + a playful toast line.
+  const weatherOrder = ['clear', 'cloudy', 'rain', 'storm'];
+  const weatherMessages = {
+    clear: '☀️ clearing the skies...',
+    cloudy: '☁️ gathering some clouds...',
+    rain: '🌧️ conjuring a little rain...',
+    storm: '⛈️ stirring up a storm...'
+  };
+  let weatherIdx = 0;
   const weatherChips = document.querySelectorAll('.env-chip[data-weather]');
+  const envVeil = document.getElementById('envVeil');
+
+  function setWeatherWhimsy(w){
+    weatherIdx = weatherOrder.indexOf(w);
+    if (weatherIdx < 0) weatherIdx = 0;
+    weatherChips.forEach(c => c.classList.toggle('active', c.dataset.weather === w));
+    if (window.envEngine) window.envEngine.weather = w;
+    envVeil.classList.add('weather-flash');
+    setTimeout(() => envVeil.classList.remove('weather-flash'), 260);
+    showToast(weatherMessages[w] || ('weather → ' + w));
+  }
+
   weatherChips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      weatherChips.forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      window.setWeather(chip.dataset.weather);
-    });
+    chip.addEventListener('click', () => setWeatherWhimsy(chip.dataset.weather));
   });
   weatherChips[0] && weatherChips[0].classList.add('active');
+
+  document.getElementById('weatherWandBtn').addEventListener('click', () => {
+    weatherIdx = (weatherIdx + 1) % weatherOrder.length;
+    setWeatherWhimsy(weatherOrder[weatherIdx]);
+  });
+
+  // "Make a wish" — summons a shooting star on demand. Shooting stars only
+  // make sense once the sky's dark enough to see them, so during the day
+  // it's a gentle nudge to come back after dark rather than a fake star.
+  document.getElementById('wishBtn').addEventListener('click', () => {
+    const engine = window.envEngine;
+    if (engine && engine.state && engine.state.stars > 0.15){
+      engine._spawnShootingStar();
+      showToast('🌠 wish sent to the sky');
+    } else {
+      showToast("✨ the sky's too bright for stars right now — try after dark");
+    }
+  });
 
   // "Something to listen to" shortcut — jumps to the existing song corner.
   document.getElementById('gotoMusicBtn').addEventListener('click', () => {
